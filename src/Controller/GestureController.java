@@ -18,7 +18,8 @@ import SimpleOpenNI.*;
  */
 public class GestureController{
 	/** Used only to toggle debug output */
-	private boolean debug = true;
+	@SuppressWarnings("unused")
+	private boolean debug = false;
 	
 	/**
 	 * Class to hold various information about joins and relation to each other
@@ -28,11 +29,9 @@ public class GestureController{
 	 * @author Levi Lindsley
 	 *
 	 */
-	protected class P{
-		/**SimpleOpenNI constant for a joint */
-		int JointOne;
-		/**SimpleOpenNI constant for a joint */
-		int JointTwo;
+	class P{
+		/**J Pair of SimpleOpenNI joints */
+		JointPair J;
 		/**X relationship between JointTwo and JointOne */
 		Integer X;
 		/**Y relationship between JointTwo and JointOne */
@@ -55,8 +54,7 @@ public class GestureController{
 		 * Is this concurrent with the next action in sequence, should not be true for last action
 		 */
 		P(int J1, int J2,Integer x, Integer y, Integer z, boolean conn){
-			JointOne = J1;
-			JointTwo = J2;
+			J = new JointPair(J1,J2);
 			X = x; 
 			Y = y;
 			Z = z;
@@ -80,12 +78,36 @@ public class GestureController{
 		 * @param o : 
 		 * Another P class to compare to
 		 * @return
-		 * True if BOTH joints in this and o are equivilant
+		 * True if BOTH joints in this and o are equivalent
 		 */
 		public boolean equalJoints(P o){
-			return (this.JointOne == o.JointOne && this.JointTwo == o.JointTwo);
+			return J.equals(o);
 		}
 	}
+	
+	class JointPair{
+		Integer First;
+		Integer Second;
+
+		JointPair(int f, int s){
+			First = new Integer(f);
+			Second = new Integer(s);
+		}
+		
+		public boolean equals(Object o){
+			if (o instanceof JointPair)
+				return (this.First == ((JointPair)o).First && this.Second == ((JointPair)o).Second);
+			return false;
+		}
+		 
+		public int hashCode(){
+			Vector<Integer> h = new Vector<Integer>();
+			h.add(First);
+			h.add(Second);
+			return h.hashCode();
+		}
+	}
+	
 	/**The Sequence if joint relationships describing the gesture */
 	private Vector<P> seq;
 	/**A list of constant positions that must be true for the gesture to complete*/
@@ -99,7 +121,7 @@ public class GestureController{
 	 * be easier to hit but will decreace the sensitivity of noting when joints are not alligned
 	 * It may be beneficial to split this into an x,y,z epsilon.
 	 */
-	private Integer ep = 15; 
+	private static Integer ep = 15; 
 	/**Number of completed steps of the gesture */
 	private Integer step; 
 
@@ -256,13 +278,13 @@ public class GestureController{
 	 * This function may be modified to get range relation instead of relationship.
 	 * 
 	 * @param x : A floating point value to be compared
-	 * @param x2 : A floating point value to compare aginst
+	 * @param x2 : A floating point value to compare against
 	 * @return
 	 * 		0 : values were within the range given by ep
 	 * 		1 :  x > (x2+ep)
 	 * 		-1 : x < (x2-ep)
 	 */
-	private int comp(float x, float x2){
+	protected static int comp(float x, float x2){
 		if ((x2+ep)>= x && (x2-ep) <= x)
 			return 0;
 		else if ((x2+ep) < x )
@@ -271,22 +293,24 @@ public class GestureController{
 			return -1;
 	}
 	
-	/**
-	 * This just gets arctan(a/b) converts to degree and rounds to nearest
-	 * @param a : Opposite of angle
-	 * @param b : Adjacent from angle
-	 * @return
-	 * 		arcTan(a/b) rounded to the nearest degree
-	 */
-	private int angle(float a, float b){
-		return (int)Math.round(Math.toDegrees(Math.atan(a/b)));
+	private static int angle(float alphaX, float alphaY, float betaX, float betaY){
+		float a = alphaY-betaY;
+		float b = alphaX-betaX;
+		double h = Math.sqrt(Math.pow(a,2)+Math.pow(b,2));
+		return (int)Math.round(Math.toDegrees(Math.asin(a/h)));
 	}
-	protected PVector comareJointPositions(PVector jointOne, PVector jointTwo) {
-		int x = comp(jointOne.x, jointTwo.x);
-		int y = comp(jointOne.y, jointTwo.y);
-		int z = comp(jointOne.z, jointTwo.z);
+	protected static PVector compareJointPositions(PVector jointOne, PVector jointTwo) {
 		
-		return new PVector(x,y,z);
+//		int x = comp(jointOne.x, jointTwo.x);
+//		int y = comp(jointOne.y, jointTwo.y);
+//		int z = comp(jointOne.z, jointTwo.z);
+		
+		int angleX = angle(jointOne.x, jointOne.z, jointTwo.x, jointTwo.z);
+		int angleY = angle(jointOne.y, jointOne.z, jointTwo.y, jointTwo.z);
+		int angleZ = angle(jointOne.x, jointOne.y, jointTwo.x, jointTwo.y);
+
+		return new PVector(angleX, angleY, angleZ);
+		//return new PVector(x,y,z);
 	}
 	
 	/**
@@ -300,11 +324,6 @@ public class GestureController{
 	 * 		True if the relation ship matches given relationship from c
 	 */
 	private boolean constMatch(P c, SimpleOpenNI context, int user){
-		//Pvectors to store joint data gotten from context
-		PVector JointOne = new PVector();
-		PVector JointOneReal = new PVector();
-		PVector JointTwo = new PVector();
-		PVector JointTwoReal = new PVector();
 
 		//if not tracking user then that user auto fails
 		if (!context.isTrackingSkeleton(user)){
@@ -312,34 +331,26 @@ public class GestureController{
 			step = 0; //reset gesture 
 			return false;
 		}
-
-		//get joint data from context as determined by the c
-		context.getJointPositionSkeleton(user, c.JointOne,JointOne);
-		context.getJointPositionSkeleton(user, c.JointTwo,JointTwo);
-
-		//convert data into realworld data this seems more useful for comparison
-		//the raw data may work just as well though not sure so I use this
-		context.convertRealWorldToProjective(JointOne, JointOneReal);
-		context.convertRealWorldToProjective(JointTwo, JointTwoReal);
-
-		//compare each joint locations at each axis
-		int x = comp(JointOneReal.x, JointTwoReal.x);
-		int y = comp(JointOneReal.y, JointTwoReal.y);
-		int z = comp(JointOneReal.z, JointTwoReal.z);
 		
+		//Get Joint Positions in converted format
+		PVector JointOneReal = getRealCoordinites(context,user, c.J.First);
+		PVector JointTwoReal = getRealCoordinites(context,user, c.J.Second);
+
+		//compare two points
+		PVector rel = compareJointPositions(JointOneReal, JointTwoReal);
 		
 		//if (debug) System.out.println("C: "+x+" "+y+" "+z);
 		
 		//If c.X is not null and the x relationship is incorrect the gesture fails 
-		if (c.X !=null && x != c.X){
+		if (c.X !=null && comp(rel.x, c.X) != 0){
 			return false;
 		}
 		//If c.Y is not null and the y relationship is wrong the gesture fails 
-		if (c.Y != null && y != c.Y){
+		if (c.Y != null && comp(rel.y, c.Y) != 0){
 			return false;
 		}
 		//If c.Z is not null and the z relationship is incorrect the gesture fails 
-		if (c.Z != null && z != c.Z){
+		if (c.Z != null && comp(rel.z,  c.Z) != 0){
 			return false;
 		}
 		//it did not fail thus it passed
@@ -356,10 +367,10 @@ public class GestureController{
 	 * 		True if the x,y,z all match the respecive relationship given by the current
 	 * step in the sequence
 	 */
-	private boolean stepMatch(int x, int y, int z){
+	private boolean stepMatch(PVector V){
 		P target = seq.get(step); //get current step
 		//check for x,y,and z matches againts target
-		if (x == target.X && y == target.Y && z == target.Z)
+		if (comp(V.x, target.X) ==0 && comp(V.y, target.Y)==0 && comp(V.z, target.Z)==0)
 			return true; //match was good
 		return false; // match failed
 	}
@@ -377,7 +388,7 @@ public class GestureController{
 	 * @return
 	 * 		True if the given relationships fall between the current and previous step.
 	 */
-	private boolean midMatch(int x, int y, int z){
+	private boolean midMatch(PVector V){
 		
 		P cur = seq.get(step); //get current step
 		
@@ -390,7 +401,7 @@ public class GestureController{
 		P prev = seq.get(cur.prev); //get previous of equal joint pair step as denoted by cur.prev
 
 		//check relation between all coordinates return true if all are within range else false
-		return (chkCoord(cur.X, x, prev.X) && chkCoord(cur.Y, y, prev.Y) && chkCoord(cur.Z, z, prev.Z));
+		return (chkCoord(cur.X, V.x, prev.X) && chkCoord(cur.Y, V.y, prev.Y) && chkCoord(cur.Z, V.z, prev.Z));
 	}
 	/**
 	 * Checks if val is between cur and prev, the bounds do not need to be in any order thus
@@ -401,7 +412,7 @@ public class GestureController{
 	 * @return
 	 * 		True if val is between cur and prev 
 	 */
-	private boolean chkCoord(int cur, int val, int prev){
+	private boolean chkCoord(int cur, float val, int prev){
 		//if the current > previous then check them in (prev <= val <= cur) 
 		//else check (cur <= val <= prev) order
 		if (cur > prev){
@@ -421,7 +432,7 @@ public class GestureController{
 	 * @param joint
 	 * @return
 	 */
-	protected PVector getRealCoordinites(SimpleOpenNI c, int user, int joint){
+	protected static PVector getRealCoordinites(SimpleOpenNI c, int user, int joint){
 		//PVectors to store joint position data and converted position data
 		PVector Joint = new PVector();
 		PVector Real = new PVector();
@@ -454,27 +465,25 @@ public class GestureController{
 		}
 		
 		//Get Joint Positions in converted format
-		PVector JointOneReal = getRealCoordinites(context,user, seq.get(step).JointOne);
-		PVector JointTwoReal = getRealCoordinites(context,user, seq.get(step).JointTwo);
+		PVector JointOneReal = getRealCoordinites(context,user, seq.get(step).J.First);
+		PVector JointTwoReal = getRealCoordinites(context,user, seq.get(step).J.Second);
 
 		//compare each joint locations at each axis
-		int x = comp(JointOneReal.x, JointTwoReal.x);
-		int y = comp(JointOneReal.y, JointTwoReal.y);
-		int z = comp(JointOneReal.z, JointTwoReal.z);
+		PVector rel = compareJointPositions(JointOneReal, JointTwoReal);
 		
 		//  if (debug) System.out.println(JointOneReal.x+" "+JointOneReal.y+" "+JointOneReal.z);
 		//  if (debug) System.out.println(x+" "+y+" "+z);
 
 
 		//IF stepMach() Position is exactly what is expected
-		if (stepMatch(x,y,z)){
+		if (stepMatch(rel)){
 			//if (debug) System.out.println("step "+step+" good");
 			step ++; //Increment Gesture
 			return true;
 		}
 
 		//IF midMatch() Position is not quite right but not wrong yet either
-		if (midMatch(x,y,z)){
+		if (midMatch(rel)){
 			// if (debug) System.out.println("holding pattern on step "+step);
 			//  step = step; //maintain position
 			return null;
@@ -486,5 +495,21 @@ public class GestureController{
 		//   if (debug) System.out.println("step "+step+" failed");
 		step = 0; //reset gesture
 		return false;
+	} 
+	
+	public void simplifyGesture(){
+		GestureRecord log = new GestureRecord();
+		for (P target : seq){
+			log.addFocusJoints(target.J.First, target.J.Second);
+			log.addNode(new JointPair(target.J.First, target.J.Second),
+					new PVector(target.X, target.Y, target.Z));
+		}
+		GestureController gen = log.generateGesture();
+		seq = gen.seq;
+		con = gen.con;
+		step = 0;
 	}
+	public void changeTolerance(int e){
+		ep += e;
+	} 
 }
