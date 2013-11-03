@@ -4,8 +4,10 @@ import SimpleOpenNI.*;
 import processing.core.*;
 import Controller.GestureController;
 import Controller.GestureRecord;
-
+ 
 public class Main extends PApplet{
+	/** A serialVersionUID to make eclipse happy*/
+	private static final long serialVersionUID = 1L;
 	SimpleOpenNI  context;
 	boolean       autoCalib=true;
 	boolean debug = true;
@@ -42,7 +44,7 @@ public class Main extends PApplet{
 //	  createWaveGesture(gesture.lastElement());
 	   
 	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND);
-	 // log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
+	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
 	  
 //	  gesture.add(new GestureController("Stir"));
 //	  createStirGesture(gesture.lastElement());
@@ -67,7 +69,6 @@ public class Main extends PApplet{
 		System.out.println("Wave Gesture Added");
 	}
 	void createStirGesture(GestureController G){
-		int L_Hand = SimpleOpenNI.SKEL_LEFT_HAND;
 		int L_Elbow = SimpleOpenNI.SKEL_LEFT_ELBOW;
 		int L_Shoulder = SimpleOpenNI.SKEL_LEFT_SHOULDER;
 		//G.addPoint(L_Elbow, L_Hand, 0,0,1,true);

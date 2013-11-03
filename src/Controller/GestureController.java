@@ -7,11 +7,23 @@ import SimpleOpenNI.*;
 
 /**
  * A class to create and recognize simple gestures using the relationship between two joints
- * provided by SimpleOpenNI.
+ * provided by SimpleOpenNI. Gestures are recognized by detecting a series of steps that form the
+ * gesture. The steps are composed of two joints and relative position of the two focus joints.
+ * A step may be declared to be consecutive with the next declared step so that the two must
+ * be done at the same time, all consecutive steps appearing in sequence should have unique joint
+ * pairs or it will not be possible to complete the gesture. If a step is declared concurrent there
+ * must be a step following it.
+ * Gestures may be further constrained by the addition of constant constraints that must be met
+ * at every step or the gesture will be considered failed. Constant constraints are not required
+ * to declare a relationship for all three axes, declaring an axis to be null will disregard that
+ * axis while calculating if the constraint is upheld.
+ *  
  * 
  * An instance of this class should be used for each individual gesture.
  *
+ *Bugs:
  * Currently does NOT work with multiple users.
+ * Probably some with relation to concurrent and constant constraints not much testing has been done
  * 
  * @author Levi Lindsley
  *
@@ -32,14 +44,19 @@ public class GestureController{
 	class P{
 		/**J Pair of SimpleOpenNI joints */
 		JointPair J;
+		
 		/**X relationship between JointTwo and JointOne */
 		Integer X;
+		
 		/**Y relationship between JointTwo and JointOne */
-		Integer Y; 
+		Integer Y;
+		
 		/**Z relationship between JointTwo and JointOne */
 		Integer Z;
+		
 		/**Determines if this action is concurrent with the action directly after it */
 		boolean C;
+		
 		/**Set to the previous appearance of ( JointOne, JointTwo ) */
 		int prev; 
 		
@@ -62,11 +79,10 @@ public class GestureController{
 		}
 		/**
 		 * Sets the previous value this is found after the JointOne and JointTwo are know
-		 * so it is called after the constructor but could be inclueded in the constructor 
+		 * so it is called after the constructor but could be included in the constructor 
 		 * at a later time.
 		 * 
-		 * @param p : 
-		 * The value to set previous to
+		 * @param p : The value to set previous to
 		 */
 		void setPrev(int p){
 			prev = p;
@@ -81,25 +97,48 @@ public class GestureController{
 		 * True if BOTH joints in this and o are equivalent
 		 */
 		public boolean equalJoints(P o){
-			return J.equals(o);
+			return J.equals(o.J);
 		}
 	}
-	
+	/**
+	 * Class used to hold pairs of joints as all recordings are done in two
+	 * joint format currently this allows for comparison between linked joints and
+	 * access to both joints being compared. The joint represented by First is compared
+	 * to the joint represented by Second for gesture purposes. 
+	 * 
+	 * @author Levi Lindsley
+	 *
+	 */
 	class JointPair{
+		/** First Joint in focus */
 		Integer First;
+		
+		/** Second Joint in focus */
 		Integer Second;
 
+		/**
+		 * Initialize First and Second with the values f and s
+		 * @param f : Value to initialize First with
+		 * @param s : Value to initialize Second with
+		 */
 		JointPair(int f, int s){
 			First = new Integer(f);
 			Second = new Integer(s);
 		}
-		
+		/**
+		 * Override of equals to check for comparison between two JointPairs
+		 */
+		@Override
 		public boolean equals(Object o){
 			if (o instanceof JointPair)
 				return (this.First == ((JointPair)o).First && this.Second == ((JointPair)o).Second);
 			return false;
 		}
-		 
+		/**
+		 * Override of hashCode because equals got an override now the hashCode will be
+		 * equal when equals() returns true
+		 */
+		@Override
 		public int hashCode(){
 			Vector<Integer> h = new Vector<Integer>();
 			h.add(First);
@@ -108,20 +147,28 @@ public class GestureController{
 		}
 	}
 	
+	//TODO Change sequence and constants from vectors to lists ?
+	
 	/**The Sequence if joint relationships describing the gesture */
-	private Vector<P> seq;
+	private Vector<P> sequence; 
+	
 	/**A list of constant positions that must be true for the gesture to complete*/
-	private Vector<P> con; 
+	private Vector<P> constants; 
 	
 	/**Name Identifier of the Gesture*/
 	public String Name;
 
 	/** 
 	 * Epsilon used to widen zero, modifying this will make zero have a larger range and thus
-	 * be easier to hit but will decreace the sensitivity of noting when joints are not alligned
-	 * It may be beneficial to split this into an x,y,z epsilon.
+	 * be easier to hit but will decrease the sensitivity of noting when joints are not aligned
+	 *
+	 * It may be beneficial to split this into an x,y,z epsilon calculation complexity would increase
+	 * but accuracy of gesture recognition may increase as a result
+	 * 
+	 * Static across all GestureControllers change with caution.
 	 */
-	private static Integer ep = 15; 
+	private static Integer Epsilon = 15; 
+	
 	/**Number of completed steps of the gesture */
 	private Integer step; 
 
@@ -135,62 +182,70 @@ public class GestureController{
 	}
 	/**
 	 * Constructor sets name to N
-	 * @param N
+	 * @param N : Value to set name to
 	 */
 	public GestureController(String N){
 		init();
 		Name = N;
 	}
 	/**
-	 * Initializes both seq and con vector and sets step to 0.
+	 * Initializes both sequence and constants vector and sets step to 0.
 	 * Used with constructor and may be useful for reseting gesture sequences.
 	 */
 	private void init(){
-		seq = new Vector<P>();
-		con = new Vector<P>();
+		sequence = new Vector<P>();
+		constants = new Vector<P>();
 		step = 0;
 	}
 	/**
-	 * Adds a joint relationship to the seq array.
+	 * Adds a joint relationship to the sequence array.
 	 * @param J1 : SimpleOpenNI constant for a joint
 	 * @param J2 : SimpleOpenNI constant for a joint
-	 * @param x : Valid values {-1,0,1}
-	 * @param y : Valid values {-1,0,1} 
-	 * @param z : Valid values {-1,0,1}
-	 * @param conn :
-	 *  Determines if this is concurrent with the gesture after it should be false for last gesture
+	 * @param x : Valid values +- [0 , 89]
+	 * @param y : Valid values +- [0 , 89]
+	 * @param z : Valid values +- [0 , 89]
+	 * @param conn : Determines if this is concurrent with the gesture after it 
+	 * 	 NOTE: should be false for last gesture
 	 */
 	public void addPoint(int J1, int J2, 
 			Integer x, Integer y, Integer z, boolean conn){
 		int loc=-1;
+		
+		//TODO Check concurrent sequence to assure unique joint pairs
+		
 		P tmp = new P(J1,J2,x,y,z,conn); //Create new tmp point using values given
 		
-		//Find the last appearance of the given joint pair in the seq array
-		for(int i=seq.size()-1;i>=0;i--){
-			if (tmp.equalJoints(seq.get(i))){
+		//Find the last appearance of the given joint pair in the sequence array
+		for(int i=sequence.size()-1;i>=0;i--){
+			if (tmp.equalJoints(sequence.get(i))){
 					loc = i;
 					break;
 			}
 		}
 		tmp.setPrev(loc); //set the previous location to the one found or -1 if not found
-		seq.add(tmp); //add to seq array
+		sequence.add(tmp); //add to sequence array
 	}
 	/**
-	 * Add a Joint relationship to con vector. The x,y,z points may be null and if they are
+	 * Add a Joint relationship to constants vector. The x,y,z points may be null and if they are
 	 * the null axis will be ignored this is so a constant constraint can use fewer constraint
 	 * axis if it is suitable for the gesture.
 	 * 
 	 * @param J1 : SimpleOpenNI constant for a joint
 	 * @param J2 : SimpleOpenNI constant for a joint
-	 * @param x : Valid values {-1,0,1} or null which translates into ignore this axis
-	 * @param y : Valid values {-1,0,1} or null which translates into ignore this axis
-	 * @param z : Valid values {-1,0,1} or null which translates into ignore this axis
+	 * @param x : Valid values +- [0 , 89] or null which ignores this axis
+	 * @param y : Valid values +- [0 , 89] or null which ignores this axis
+	 * @param z : Valid values +- [0 , 89] or null which ignores this axis
 	 */
 	public void addConstant(int J1, int J2,
 			Integer x, Integer y, Integer z){
-		con.add(new P(J1,J2, x,y,z,false));
+		//If all axes are being ignored the constraint is null ignore it
+		if(x==null && y == null && z==null) return;
+		
+		//TODO Check all previous constraints and make sure that this constraint does not
+		//contradict with any of the previous constraints
+		
+		constants.add(new P(J1,J2, x,y,z,false));
 	}
-	
 	/**
 	 * This function should be called to check for gesture completion and to update the gesture.
 	 * 
@@ -212,7 +267,7 @@ public class GestureController{
 		
 		//if step == seq.size then all steps of the gesture have been completed
 		//reset and return true
-		if (step == seq.size()){
+		if (step == sequence.size()){
 			step = 0; //reset gesture
 			return true; //return the successful completion
 		}
@@ -229,7 +284,7 @@ public class GestureController{
 		 * with the current gesture so that there is a non-concurrent gesture between sets of
 		 * concurrent gestures
 		 */
-		while (step > 0 && step < seq.size() &&seq.get(step-1).C){
+		while (step > 0 && step < sequence.size() &&sequence.get(step-1).C){
 			//Some part of the gesture failed, reset the entire gesture
 			if (N == false){
 				step = 0; //Reset gesture
@@ -253,7 +308,7 @@ public class GestureController{
 		}
 		
 		// Check to assure that the constant bounds are being upheld
-		for (P c : con){
+		for (P c : constants){
 			//if the constants are being violated the reset the gesture
 			if (!constMatch(c,context,user)){
 				step = 0; //reset gesture
@@ -262,7 +317,6 @@ public class GestureController{
 		//The gesture was not finished return false
 		return false;
 	}
-	
 	/**
 	 * Manually restart the gesture may be useful to impose other restrictions on the gesture
 	 * that the controller does not account for such as being within a bounding box or holding
@@ -271,53 +325,82 @@ public class GestureController{
 	public void reset(){
 		step = 0; //reset gesture
 	}
-	
 	/**
-	 * Compares to floating point values taking ep (Epsilon) into account for equality.
+	 * Compares to floating point values taking Epsilon into account for equality.
 	 * Returns the relationship proper between x and x2 (x {=, <, >} x2).
 	 * This function may be modified to get range relation instead of relationship.
 	 * 
 	 * @param x : A floating point value to be compared
 	 * @param x2 : A floating point value to compare against
 	 * @return
-	 * 		0 : values were within the range given by ep
-	 * 		1 :  x > (x2+ep)
-	 * 		-1 : x < (x2-ep)
+	 * 		0 : values were within the range given by Epsilon
+	 * 		1 :  x > (x2+Epsilon)
+	 * 		-1 : x < (x2-Epsilon)
 	 */
 	protected static int comp(float x, float x2){
-		if ((x2+ep)>= x && (x2-ep) <= x)
+		if ((x2+Epsilon)>= x && (x2-Epsilon) <= x)
 			return 0;
-		else if ((x2+ep) < x )
+		else if ((x2+Epsilon) < x )
 			return 1;
 		else 
 			return -1;
 	}
-	
+	/**
+	 * Calculates the angle between the two given points given by forming a triangle with
+	 * the vertices alpha,beta,gamma where gammaX = alphaX and gammaY = betaY.
+	 * The angle retrieved is sin(theta)
+	 * 
+	 * Due to the three dimensional nature of the input data and the two dimensional calculation
+	 * used here the X and Y referrals may not be to X, Y in the standard plane but 
+	 * to a 2D plane in 3D space with 3D points flattened onto it.
+	 * 
+	 * @param alphaX : X coordinate of point alpha
+	 * @param alphaY : Y coordinate of point alpha
+	 * @param betaX : X coordinate of point beta
+	 * @param betaY : Y coordinate of point beta
+	 * @return
+	 * 		Angle between alpha and beta rounded to the nearest integer angle in degrees.
+	 */
 	private static int angle(float alphaX, float alphaY, float betaX, float betaY){
-		float a = alphaY-betaY;
-		float b = alphaX-betaX;
-		double h = Math.sqrt(Math.pow(a,2)+Math.pow(b,2));
-		return (int)Math.round(Math.toDegrees(Math.asin(a/h)));
+		float a = alphaY-betaY; //Calculate length of vertical side
+		float b = alphaX-betaX; //Calculate length of horizontal side
+		double h = Math.sqrt(Math.pow(a,2)+Math.pow(b,2)); //Calculate length of hypotenuse 
+		return (int)Math.round(Math.toDegrees(Math.asin(a/h))); //Calculate sin of angle and round
 	}
+	/**
+	 * Calculates the angle between two points along three planes.
+	 * 
+	 * @param jointOne : First joint to compare
+	 * @param jointTwo : Second joint to compare
+	 * @return
+	 * 		Vector of the angular differences between jointOne and jointTwo with the return values as
+	 * 			x: angle created on x-z plane
+	 * 			y: angle created on y-z plane
+	 * 			z: angle created on x-y plane
+	 */
 	protected static PVector compareJointPositions(PVector jointOne, PVector jointTwo) {
 		
 //		int x = comp(jointOne.x, jointTwo.x);
 //		int y = comp(jointOne.y, jointTwo.y);
 //		int z = comp(jointOne.z, jointTwo.z);
 		
+		//Calculate angle on X-Z plane
 		int angleX = angle(jointOne.x, jointOne.z, jointTwo.x, jointTwo.z);
+		
+		//Calculate angle on Y-Z plane
 		int angleY = angle(jointOne.y, jointOne.z, jointTwo.y, jointTwo.z);
+		
+		//Calculate angle on X-Y plane
 		int angleZ = angle(jointOne.x, jointOne.y, jointTwo.x, jointTwo.y);
-
+		
 		return new PVector(angleX, angleY, angleZ);
 		//return new PVector(x,y,z);
 	}
-	
 	/**
 	 * Determines if a skeletal model taken from context matches a constant relation given
 	 * by c.
 	 * 
-	 * @param c : A constant joint relationship should be from con vector
+	 * @param c : A constant joint relationship should be from constants vector
 	 * @param context : SimpleOpenNI instance
 	 * @param user : Id of user to get skeleton from context
 	 * @return
@@ -356,25 +439,21 @@ public class GestureController{
 		//it did not fail thus it passed
 		return true;
 	}
-	
 	/**
 	 * Check if the current step matches the relationship given by x,y,z perfectly 
 	 * 
-	 * @param x : The x axis relationship of the joints
-	 * @param y : The y axis relationship of the joints
-	 * @param z : The z axis relationship of the joints
+	 * @param V : PVector containing the relationship of the joints
 	 * @return
-	 * 		True if the x,y,z all match the respecive relationship given by the current
+	 * 		True if the V.x,V.y,and V.z all match the respective relationship given by the current
 	 * step in the sequence
 	 */
 	private boolean stepMatch(PVector V){
-		P target = seq.get(step); //get current step
+		P target = sequence.get(step); //get current step
 		//check for x,y,and z matches againts target
 		if (comp(V.x, target.X) ==0 && comp(V.y, target.Y)==0 && comp(V.z, target.Z)==0)
 			return true; //match was good
 		return false; // match failed
 	}
-	
 	/**
 	 * Checks to see if the given x,y,z relationships fall between the relationships given by
 	 * the current step and the previous step. This is used to check if a gesture may have paused
@@ -382,15 +461,14 @@ public class GestureController{
 	 * but did not do anything wrong yet the controller just needs to wait on the user to finish the
 	 * gesture.
 	 * 
-	 * @param x : The x axis relationship of the joints
-	 * @param y : The y axis relationship of the joints
-	 * @param z : The z axis relationship of the joints
+	 * @param V : PVector containing the relationship of the joints
+	 * 
 	 * @return
 	 * 		True if the given relationships fall between the current and previous step.
 	 */
 	private boolean midMatch(PVector V){
 		
-		P cur = seq.get(step); //get current step
+		P cur = sequence.get(step); //get current step
 		
 		//First step of joint type
 		if(cur.prev == -1){
@@ -398,7 +476,7 @@ public class GestureController{
 		}
 		
 		//All Other steps
-		P prev = seq.get(cur.prev); //get previous of equal joint pair step as denoted by cur.prev
+		P prev = sequence.get(cur.prev); //get previous of equal joint pair step as denoted by cur.prev
 
 		//check relation between all coordinates return true if all are within range else false
 		return (chkCoord(cur.X, V.x, prev.X) && chkCoord(cur.Y, V.y, prev.Y) && chkCoord(cur.Z, V.z, prev.Z));
@@ -424,15 +502,20 @@ public class GestureController{
 		}
 		return true;
 	}
-	
 	/**
-	 * Retrieves and converts 
-	 * @param c
-	 * @param user
-	 * @param joint
+	 * Retrieves a specified joint of the specified user from a SimpleOpenNI instance and converts
+	 * the coordinates. 
+	 * 
+	 * @param c : A SimpleOpenNI context
+	 * @param user : A user id to retrieve joint data on
+	 * @param joint : A SimpleOpenNI constant representing a joint
 	 * @return
+	 * 		Converted coordinates of joint for the given user
 	 */
 	protected static PVector getRealCoordinites(SimpleOpenNI c, int user, int joint){
+		//Fail-fast check if user has not skeletal model
+		if (!c.isTrackingSkeleton(user)) return null;
+		
 		//PVectors to store joint position data and converted position data
 		PVector Joint = new PVector();
 		PVector Real = new PVector();
@@ -465,8 +548,8 @@ public class GestureController{
 		}
 		
 		//Get Joint Positions in converted format
-		PVector JointOneReal = getRealCoordinites(context,user, seq.get(step).J.First);
-		PVector JointTwoReal = getRealCoordinites(context,user, seq.get(step).J.Second);
+		PVector JointOneReal = getRealCoordinites(context,user, sequence.get(step).J.First);
+		PVector JointTwoReal = getRealCoordinites(context,user, sequence.get(step).J.Second);
 
 		//compare each joint locations at each axis
 		PVector rel = compareJointPositions(JointOneReal, JointTwoReal);
@@ -496,20 +579,51 @@ public class GestureController{
 		step = 0; //reset gesture
 		return false;
 	} 
-	
+	/**
+	 * Converts a gesture into only discreetly detectable steps, to be used after increasing
+	 * Epsilon. 
+	 * 
+	 * Current implementation is horrible so I commented it out, it destroys concurrent
+	 * links creates new ones and is just a generally horrible way to do this.
+	 * 
+	 */
 	public void simplifyGesture(){
+		//TODO Fix this function
+		/*
 		GestureRecord log = new GestureRecord();
-		for (P target : seq){
+		for (P target : sequence){
 			log.addFocusJoints(target.J.First, target.J.Second);
 			log.addNode(new JointPair(target.J.First, target.J.Second),
 					new PVector(target.X, target.Y, target.Z));
 		}
 		GestureController gen = log.generateGesture();
-		seq = gen.seq;
-		con = gen.con;
+		sequence = gen.sequence;
 		step = 0;
+		*/
 	}
-	public void changeTolerance(int e){
-		ep += e;
+	/**
+	 * Modifies Epsilon by e, a positive e will make position detection less sensitive and a negative e
+	 * will make detection more sensitive.
+	 * 
+	 * Epsilon is bounded below by 0 and above by 90 (0<=Epsilon<=90)
+	 * 
+	 * @param delta : change of Epsilon
+	 */
+	public void changeTolerance(int delta){
+		Epsilon += delta;
+		
+		//Minimum Epsilon = 0
+		if (Epsilon < 0)
+			Epsilon = 0;
+		
+		//Maximum Epsilon = 90
+		if (Epsilon > 90)
+			Epsilon = 90;
 	} 
+	/**
+	 * Resets Epsilon to default value of 15
+	 */
+	public void setDefaultTolerance(){
+		Epsilon = 15;
+	}
 }
