@@ -1,3 +1,6 @@
+/**
+ * 
+ */
 package Controller;
 
 import java.util.Vector;
@@ -36,7 +39,6 @@ public class GestureController{
 	/**
 	 * Class to hold various information about joins and relation to each other
 	 * and the other actions in sequence.
-	 * Creates as a class because it is easier to work with and expand as needed
 	 * 
 	 * @author Levi Lindsley
 	 *
@@ -91,13 +93,23 @@ public class GestureController{
 		 * Determines if two instances have the same Joint locations used for finding the 
 		 * previous value
 		 * 
-		 * @param o : 
-		 * Another P class to compare to
+		 * @param o : Another P class to compare to
 		 * @return
 		 * True if BOTH joints in this and o are equivalent
 		 */
 		public boolean equalJoints(P o){
 			return J.equals(o.J);
+		}
+		/**
+		 * Determines if two instances have angular locations that are within Epsilon of each other
+		 * 
+		 * @param o : Other instance to compare to
+		 * @return
+		 * 		True if angles along all axes are equivalent where 
+		 * 		this.X == o.X && this.Y == o.Y && this.Z == o.Z +- Epsion.
+		 */
+		public boolean equalsCoordinates(P o){
+			return comp(this.X, o.X) == 0 && comp(this.Y, o.Y) == 0 && comp(this.Z, o.Z)==0;
 		}
 	}
 	/**
@@ -395,6 +407,16 @@ public class GestureController{
 		
 		return new PVector(angleX, angleY, angleZ);
 		//return new PVector(x,y,z);
+	}
+	/**
+	 * Checks if the PVectors a and b are within Epsilon of each other on each axis
+	 * @param a : PVector to compare to b
+	 * @param b : PVector to compare to a
+	 * @return
+	 * 		True if a == b, +- Epsilon on each axis
+	 */
+	public boolean equalAxes(PVector a, PVector b){
+		return comp(a.x, b.x) == 0 && comp(a.y,b.y) ==0 && comp(a.z, b.z)==0;
 	}
 	/**
 	 * Determines if a skeletal model taken from context matches a constant relation given
