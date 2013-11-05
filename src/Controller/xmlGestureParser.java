@@ -1,6 +1,3 @@
-/**
- * 
- */
 package Controller;
 
 import java.io.BufferedWriter;
@@ -8,10 +5,20 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Class to help save and load instances of other classes to an xml format
+ * there may be a way to make java do this but I don't know it so I wrote 
+ * this.
+ * 
+ * @author Levi Lindsley
+ *
+ */
 public class xmlGestureParser {
 	@SuppressWarnings("unused")
 	private static boolean debug = true;
 
+	//TODO add save function for JointRecorder
+	//TODO add load function for GestureController & JointRecorder
 	public static void save(String fileName, List<GestureController> g){
 		BufferedWriter wr;
 		try {
@@ -54,7 +61,7 @@ public class xmlGestureParser {
 		
 		content +="<?xml version=\"1.0\"?>"+'\n';
 		content +="<root>"+'\n';
-		content +=tb+"<epsilon>"+g.getTolerance()+"</epsilon>";
+		content +=tb+"<epsilon>"+GestureController.getTolerance()+"</epsilon>";
 		content += g.toXML(tb);
 		content +="</root>";
 		write(wr,content);

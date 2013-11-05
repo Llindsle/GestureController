@@ -1,6 +1,3 @@
-/**
- * 
- */
 package Controller;
 
 import java.util.Iterator;
@@ -13,6 +10,9 @@ import SimpleOpenNI.SimpleOpenNI;
 
 /**
  * Class used to capture and process specific joint relations to generate a gesture from.
+ *
+ * Recording does not support multiple users, more that one user may interfere
+ * with recording.
  * 
  * @author Levi Lindsley
  *
@@ -44,9 +44,9 @@ public class GestureRecord{
 	 * @param first : First Joint in pair
 	 * @param second : Second Joint in pair
 	 * @return
+	 * 		True if the joint pair was added successfully.
 	 * 		False if there is recorded data and the pair may not be currently added
 	 * or if the joint pair is already a focus pair.
-	 * 		True if the joint pair was added successfully.
 	 */
 	public boolean addFocusJoints(int first, int second){
 		//Focus pairs may not be changed mid record
@@ -94,6 +94,16 @@ public class GestureRecord{
 			recorder.get(i).add(Relative);
 		}
 	}
+	/**
+	 * Processes the JointRecorder from [startTick , endTick) and adds data 
+	 * to this based on focus joint pairs if available in log. If log does
+	 * not have all focus joints that this requires then no data will be 
+	 * processed. Note endTick is not included in the processed data.
+	 *  
+	 * @param log : JointRecorder to parse data from
+	 * @param startTick : record tick to start at
+	 * @param endTick : record tick after the final processed tick
+	 */
 	public void record(JointRecorder log, int startTick, int endTick){
 		//basic checks about invalid input
 		if (log == null || endTick > log.getTicks() || startTick >= endTick){
