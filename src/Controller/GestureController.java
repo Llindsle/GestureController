@@ -34,7 +34,9 @@ import SimpleOpenNI.*;
 public class GestureController{
 	/** Used only to toggle debug output */
 	@SuppressWarnings("unused")
-	private boolean debug = false;
+	private boolean debug = true;
+	
+	final String classTag = "gesture";
 	
 	/**
 	 * Class to hold various information about joins and relation to each other
@@ -44,6 +46,8 @@ public class GestureController{
 	 *
 	 */
 	class P{
+		final String classTag = "p";
+		
 		/**J Pair of SimpleOpenNI joints */
 		JointPair J;
 		
@@ -57,10 +61,10 @@ public class GestureController{
 		Integer Z;
 		
 		/**Determines if this action is concurrent with the action directly after it */
-		boolean C;
+		Boolean C;
 		
 		/**Set to the previous appearance of ( JointOne, JointTwo ) */
-		int prev; 
+		Integer prev; 
 		
 		/**
 		 * The constructor called by Gesturecontroller.addPoint();
@@ -111,6 +115,26 @@ public class GestureController{
 		public boolean equalsCoordinates(P o){
 			return comp(this.X, o.X) == 0 && comp(this.Y, o.Y) == 0 && comp(this.Z, o.Z)==0;
 		}
+		public String toXML(){
+			return toXML(null);
+		}
+		public String toXML(String indent){
+			if (indent == null)
+				indent = "";
+			
+			String content = new String();
+			content +=indent+"<"+classTag+">"+'\n';
+			indent += '\t';
+			content +=J.toXML(indent);
+			content += xmlGestureParser.createElement("x", indent, X.toString());
+			content += xmlGestureParser.createElement("y", indent, Y.toString());
+			content += xmlGestureParser.createElement("z", indent, Z.toString());
+			content += xmlGestureParser.createElement("c", indent, C.toString());
+			content += xmlGestureParser.createElement("prev", indent, prev.toString());
+			indent = indent.substring(1);
+			content +=indent+"</"+classTag+">"+'\n';
+			return content;
+		}
 	}
 	/**
 	 * Class used to hold pairs of joints as all recordings are done in two
@@ -122,6 +146,7 @@ public class GestureController{
 	 *
 	 */
 	class JointPair{
+		final String classTag = "j";
 		/** First Joint in focus */
 		Integer First;
 		
@@ -156,6 +181,22 @@ public class GestureController{
 			h.add(First);
 			h.add(Second);
 			return h.hashCode();
+		}
+		public String toXML(){
+			return toXML(null);
+		}
+		public String toXML(String indent){
+			if (indent == null)
+				indent = "";
+			String context = new String();
+			context +=indent+"<"+classTag+">"+'\n';
+			
+			String ind = indent+'\t';
+			context += xmlGestureParser.createElement("first", ind, First.toString());
+			context += xmlGestureParser.createElement("second", ind, Second.toString());
+			
+			context +=indent+"</"+classTag+">"+'\n';
+			return context;
 		}
 	}
 	
@@ -647,5 +688,32 @@ public class GestureController{
 	 */
 	public void setDefaultTolerance(){
 		Epsilon = 15;
+	}
+	public static Integer getTolerance(){
+		return Epsilon;
+	}
+
+	public String toXML(){
+		return toXML(null);
+	}
+	public String toXML(String indent){
+		if (indent == null)
+			indent = "";
+		
+		String content = new String();
+		content +=indent+"<"+classTag+">"+'\n';
+		content += xmlGestureParser.createElement("name", indent+'\t', Name);
+		
+		String ind = new String();
+		ind += indent+'\t';
+		for (P e : sequence){
+			content += e.toXML(ind);
+		}
+		for (P e : constants){
+			content += e.toXML(ind);
+		}
+		content +=indent+"</"+classTag+">"+'\n';
+		
+		return content;
 	}
 }

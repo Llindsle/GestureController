@@ -2,8 +2,7 @@ import java.util.Vector;
 
 import SimpleOpenNI.*;
 import processing.core.*;
-import Controller.GestureController;
-import Controller.GestureRecord;
+import Controller.*;
  
 public class Main extends PApplet{
 	/** A serialVersionUID to make eclipse happy*/
@@ -15,13 +14,35 @@ public class Main extends PApplet{
 	
 	Vector<GestureController> gesture;
 	GestureRecord log;
+	JointRecorder jR;
 
 	public void setup()
 	{
 	  context = new SimpleOpenNI(this);
 	  gesture = new Vector<GestureController>();
 	  log = new GestureRecord();
+	  jR = new JointRecorder();
+	  jR.addAll();
 	   
+	  
+	  gesture.add(new GestureController("Wave"));
+	  createWaveGesture(gesture.lastElement());
+	  
+	   
+	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND);
+//	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
+	  
+	  gesture.add(new GestureController("Stir"));
+	  createStirGesture(gesture.lastElement());
+	  
+	  xmlGestureParser.save("Gesture.xml", gesture);
+//	  
+//	  gesture.add(new GestureController("High Wave"));
+//	  createWaveGesture(gesture.lastElement());
+//	  gesture.lastElement().addConstant(SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_LEFT_HAND, 
+//			  null, 1, null);
+	 
+	  
 	  // enable depthMap generation 
 	  if(context.enableDepth() == false)
 	  {
@@ -39,20 +60,6 @@ public class Main extends PApplet{
 	  stroke(255,0,0);
 	  strokeWeight(2);
 	  smooth();
-	  
-//	  gesture.add(new GestureController("Wave"));
-//	  createWaveGesture(gesture.lastElement());
-	   
-	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND);
-	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
-	  
-//	  gesture.add(new GestureController("Stir"));
-//	  createStirGesture(gesture.lastElement());
-//	  
-//	  gesture.add(new GestureController("High Wave"));
-//	  createWaveGesture(gesture.lastElement());
-//	  gesture.lastElement().addConstant(SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_LEFT_HAND, 
-//			  null, 1, null);
 	 
 	  size(context.depthWidth(), context.depthHeight()); 
 	  System.out.println("Setup complete");
@@ -99,7 +106,8 @@ public class Main extends PApplet{
 	    		  System.out.println(gesture.get(j).Name);
 	    	  }
 		  if (Recording){
-			  log.record(context, userList[i]);
+			  jR.record(context, userList[i]);
+//			  log.record(context, userList[i]);
 		  }
 	    }
 	  }    
@@ -148,16 +156,19 @@ public class Main extends PApplet{
 				Recording = false;
 			}
 			else if (!Recording){
-				if (log.isEmpty()){
+				if (jR.isEmpty()){
 					System.out.println("Recording Start");
 					Recording = true;
 				}
 				else{
-					gesture.add(log.generateGesture());
+					log.record(jR);
+					
+					gesture.add(log.generateGesture(false));
 					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
 					System.out.println(log);
 					System.out.println("Gesture "+gesture.size()+" generated");
 					log.resetRecording();
+					jR.clear();
 				}
 			}
 		}
