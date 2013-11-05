@@ -1,0 +1,29 @@
+//root tree
+<root>
+	<epsilon> </epsilon>
+	<gesture> </gesture>
+</root>
+
+//gesture tree
+<gesture>
+	<name> </name>
+	<constants>
+		<p> </p>
+	</constants>
+	<sequence>
+		<p> </p>
+	</sequence>
+</gesture>
+
+//p tree
+<p>
+	<j>
+		<first> </first>
+		<second> </second>
+	</j>
+	<x> </x>
+	<y> </y>
+	<z> </z>
+	<c> </c>
+	<prev> </prev>
+</p>
