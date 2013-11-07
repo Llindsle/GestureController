@@ -1,4 +1,4 @@
-package Controller;
+package controller;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +31,9 @@ public class JointRecorder {
 	
 	/**The record of all joints at each distinct record call*/
 	private List<Map<Integer, PVector>> recorder;
+	
+	/**Denotes current tick for play back*/
+	private int playBackTick;
 	
 	/**
 	 * Default Constructor
@@ -107,19 +110,130 @@ public class JointRecorder {
 	}
 	/**
 	 * Retrieves the position of a joint at a given time
-	 * @param time : the number of ticks from the beginning of the recording
+	 * @param tick : the number of ticks from the beginning of the recording
 	 * @param joint : the index of the joint to retrieve
 	 * @return
 	 * 		PVector representing joint at the given time, this is the same as
 	 * calling GestureController.getRealcoordinites() at the time that the 
 	 * recording represents.
 	 */
-	public PVector getJoint(int time, int joint){
+	public PVector getJoint(int tick, int joint){
 		//Make sure that time is within bounds
-		if (!joints.contains(joint) || !(time < recorder.size())){
+		if (!joints.contains(joint) || !(tick < recorder.size())){
 			return null;
 		}
-		return recorder.get(time).get(joint);
+		return recorder.get(tick).get(joint);
+	}
+	public void playBack(List<Integer> focus){
+
+		
+	}
+	public void playBack(int tick, List<Integer> focus){
+		List<PVector []> coordinites = new ArrayList<PVector[]>();
+		PVector v[] = null;
+		int con1, con2;
+		
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_NECK);
+		con1 = SimpleOpenNI.SKEL_HEAD;
+		con2 = SimpleOpenNI.SKEL_NECK;
+		v = getJointPosition(tick, con1, con2, focus);
+		if (v!= null) coordinites.add(v);
+		
+		con1 = con2;
+		con2 = SimpleOpenNI.SKEL_LEFT_SHOULDER;
+		v = getJointPosition(tick, con1, con2, focus);
+		if (v!= null) coordinites.add(v);
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_LEFT_SHOULDER);
+		
+		con1 = con2;
+		con2 = SimpleOpenNI.SKEL_LEFT_ELBOW;
+		v = getJointPosition(tick, con1, con2, focus);
+		if (v!= null) coordinites.add(v);
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
+		
+		con1 = con2;
+		con2 = SimpleOpenNI.SKEL_LEFT_HAND;
+		v = getJointPosition(tick, con1, con2, focus);
+		if (v!= null) coordinites.add(v);
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND);
+//
+		con1 = SimpleOpenNI.SKEL_NECK;
+		con2 = SimpleOpenNI.SKEL_RIGHT_SHOULDER;
+		v = getJointPosition(tick, con1, con2, focus);
+		if (v!= null) coordinites.add(v);
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_RIGHT_SHOULDER);
+		
+		con1 = con2;
+		con2 = SimpleOpenNI.SKEL_RIGHT_ELBOW;
+		v = getJointPosition(tick, con1, con2, focus);
+		if (v!= null) coordinites.add(v);
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_RIGHT_ELBOW);
+		
+		con1 = con2;
+		con2 = SimpleOpenNI.SKEL_RIGHT_HAND;
+		v = getJointPosition(tick, con1, con2, focus);
+		if (v!= null) coordinites.add(v);
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_ELBOW, SimpleOpenNI.SKEL_RIGHT_HAND);
+//
+		con1 = SimpleOpenNI.SKEL_LEFT_SHOULDER;
+		con2 = SimpleOpenNI.SKEL_TORSO;
+		v = getJointPosition(tick, con1, con2, focus);
+		if (v!= null) coordinites.add(v);
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_TORSO);
+		
+		con1 = SimpleOpenNI.SKEL_RIGHT_SHOULDER;
+		v = getJointPosition(tick, con1, con2, focus);
+		if (v!= null) coordinites.add(v);
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_TORSO);
+//
+		con1 = con2;
+		con2 = SimpleOpenNI.SKEL_LEFT_HIP;
+		v = getJointPosition(tick, con1, con2, focus);
+		if (v!= null) coordinites.add(v);
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_LEFT_HIP);
+		
+		con1 = con2;
+		con2 = SimpleOpenNI.SKEL_LEFT_KNEE;
+		v = getJointPosition(tick, con1, con2, focus);
+		if (v!= null) coordinites.add(v);
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HIP, SimpleOpenNI.SKEL_LEFT_KNEE);
+		
+		con1 = con2;
+		con2 = SimpleOpenNI.SKEL_LEFT_FOOT;
+		v = getJointPosition(tick, con1, con2, focus);
+		if (v!= null) coordinites.add(v);
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_KNEE, SimpleOpenNI.SKEL_LEFT_FOOT);
+//
+		con1 = SimpleOpenNI.SKEL_TORSO;
+		con2 = SimpleOpenNI.SKEL_RIGHT_HIP;
+		v = getJointPosition(tick, con1, con2, focus);
+		if (v!= null) coordinites.add(v);
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_RIGHT_HIP);
+		
+		con1 = con2;
+		con2 = SimpleOpenNI.SKEL_RIGHT_KNEE;
+		v = getJointPosition(tick, con1, con2, focus);
+		if (v!= null) coordinites.add(v);
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HIP, SimpleOpenNI.SKEL_RIGHT_KNEE);
+		
+		con1 = con2;
+		con2 = SimpleOpenNI.SKEL_RIGHT_FOOT;
+		v = getJointPosition(tick, con1, con2, focus);
+		if (v!= null) coordinites.add(v);
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_KNEE, SimpleOpenNI.SKEL_RIGHT_FOOT);  
+		
+	}
+	private PVector[] getJointPosition(int tick, int con1, int con2, List<Integer>focus){
+		if ((contains(con1)&&contains(con2))&&focus.contains(con1)&&focus.contains(con2)){
+			PVector[] ret = new PVector[2];
+			ret[0] = recorder.get(tick).get(con1);
+			ret[1] = recorder.get(tick).get(con2);
+			return ret;
+		}
+		return null;
+	}
+	public void playBack(int startTick, int endTick, List<Integer> focus){
+		
 	}
 	/**
 	 * @return

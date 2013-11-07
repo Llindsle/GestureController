@@ -1,4 +1,4 @@
-package Controller;
+package controller;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -29,20 +29,17 @@ public class xmlGestureParser {
 			return;
 		}
 		String content = new String();
-		String tb = new String();
-		tb += '\t';
 		
 		content +="<?xml version=\"1.0\"?>"+'\n';
 		content +="<root>"+'\n';
-		content += createElement("epsilon",tb,GestureController.getTolerance().toString());
+		content += createElement("epsilon",GestureController.getTolerance().toString());
 		write(wr,content);
 		
 		for(GestureController c : g){
-			write(wr,c.toXML(tb));
+			write(wr,c.toXML());
 		}
 		
-		content ="</root>";
-		write(wr,content);
+		write(wr,"</root>");
 
 	}
 	public static void save(String fileName, GestureController g){
@@ -56,14 +53,12 @@ public class xmlGestureParser {
 		}
 		
 		String content = new String();
-		String tb = new String();
-		tb += '\t';
 		
 		content +="<?xml version=\"1.0\"?>"+'\n';
 		content +="<root>"+'\n';
-		content +=tb+"<epsilon>"+GestureController.getTolerance()+"</epsilon>";
-		content += g.toXML(tb);
-		content +="</root>";
+		content +="<epsilon>"+GestureController.getTolerance()+"</epsilon>";
+		content += g.toXML();
+		content +="</root>"; 
 		write(wr,content);
 	}
 	
@@ -76,14 +71,18 @@ public class xmlGestureParser {
 			e.printStackTrace();
 		}
 	}
-	protected static String createElement(String tag,String indent, String text){
-		if (indent == null)
-			indent = "";
-		
+	/**
+	 * Creates a basic text element in xml format with beginning and end tags.
+	 * @param tag : tag to open and close
+	 * @param text : element body
+	 * @return
+	 * 		xml element in the form &lttag&gt text &lt/tag&gt
+	 */
+	protected static String createElement(String tag, String text){
 		String element = new String();
-		element += indent+"<"+tag+">"+'\n';
-		element += indent+text+'\n';
-		element += indent+"</"+tag+">"+'\n';
+		element += "<"+tag+">"+'\n';
+		element += text+'\n';
+		element += "</"+tag+">"+'\n';
 		return element;
 	}
 }

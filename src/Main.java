@@ -1,9 +1,11 @@
+import java.util.List;
 import java.util.Vector;
+
+import controller.*;
 
 import SimpleOpenNI.*;
 import processing.core.*;
-import Controller.*;
- 
+
 public class Main extends PApplet{
 	/** A serialVersionUID to make eclipse happy*/
 	private static final long serialVersionUID = 1L;
@@ -11,6 +13,7 @@ public class Main extends PApplet{
 	boolean       autoCalib=true;
 	boolean debug = true;
 	boolean Recording = false;
+	boolean compression = false;
 	
 	Vector<GestureController> gesture;
 	GestureRecord log;
@@ -18,22 +21,22 @@ public class Main extends PApplet{
 
 	public void setup()
 	{
+		
 	  context = new SimpleOpenNI(this);
 	  gesture = new Vector<GestureController>();
 	  log = new GestureRecord();
 	  jR = new JointRecorder();
 	  jR.addAll();
 	   
-	  
 	  gesture.add(new GestureController("Wave"));
 	  createWaveGesture(gesture.lastElement());
 	  
 	   
 	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND);
-//	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
+	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
 	  
-	  gesture.add(new GestureController("Stir"));
-	  createStirGesture(gesture.lastElement());
+//	  gesture.add(new GestureController("Stir"));
+//	  createStirGesture(gesture.lastElement());
 	  
 	  xmlGestureParser.save("Gesture.xml", gesture);
 //	  
@@ -113,7 +116,29 @@ public class Main extends PApplet{
 	  }    
 	  
 	}
-
+	void drawSkeletion(List<PVector[]> points){
+		for (PVector[] V : points){
+			//not the best use as that third vector go the axe but eh
+			line (V[0].x, V[0].y, V[1].x, V[1].y);
+		}
+	}
+	void printSkeletalConst(){
+		System.out.println("Head: "+SimpleOpenNI.SKEL_HEAD);
+		System.out.println("Neck: "+SimpleOpenNI.SKEL_NECK);
+		System.out.println("L Shoulder: "+SimpleOpenNI.SKEL_LEFT_SHOULDER);
+		System.out.println("R Shoulder: "+SimpleOpenNI.SKEL_RIGHT_SHOULDER);
+		System.out.println("L Elbow: "+SimpleOpenNI.SKEL_LEFT_ELBOW);
+		System.out.println("R Elbow: "+SimpleOpenNI.SKEL_RIGHT_ELBOW);
+		System.out.println("L Hand: "+SimpleOpenNI.SKEL_LEFT_HAND);
+		System.out.println("R Hand: "+SimpleOpenNI.SKEL_RIGHT_HAND);
+		System.out.println("Torso: "+SimpleOpenNI.SKEL_TORSO);
+		System.out.println("L Hip: "+SimpleOpenNI.SKEL_LEFT_HIP);
+		System.out.println("R Hip: "+SimpleOpenNI.SKEL_RIGHT_HIP);
+		System.out.println("L Knee: "+SimpleOpenNI.SKEL_LEFT_KNEE);
+		System.out.println("R Knee: "+SimpleOpenNI.SKEL_RIGHT_KNEE);
+		System.out.println("L Foot: "+SimpleOpenNI.SKEL_LEFT_FOOT);
+		System.out.println("R Foot: "+SimpleOpenNI.SKEL_RIGHT_FOOT);
+	}
 	// draw the skeleton with the selected joints
 	void drawSkeleton(int userId)
 	{
@@ -123,33 +148,36 @@ public class Main extends PApplet{
 	  context.getJointPositionSkeleton(userId,SimpleOpenNI.SKEL_NECK,jointPos);
 	  println(jointPos);
 	  */
-	  
-	  context.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_NECK);
 
-	  context.drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_LEFT_SHOULDER);
-	  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
-	  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND);
+		  context.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_NECK);
 
-	  context.drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_RIGHT_SHOULDER);
-	  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_RIGHT_ELBOW);
-	  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_ELBOW, SimpleOpenNI.SKEL_RIGHT_HAND);
+		  context.drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_LEFT_SHOULDER);
+		  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
+		  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND);
 
-	  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_TORSO);
-	  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_TORSO);
+		  context.drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_RIGHT_SHOULDER);
+		  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_RIGHT_ELBOW);
+		  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_ELBOW, SimpleOpenNI.SKEL_RIGHT_HAND);
 
-	  context.drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_LEFT_HIP);
-	  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HIP, SimpleOpenNI.SKEL_LEFT_KNEE);
-	  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_KNEE, SimpleOpenNI.SKEL_LEFT_FOOT);
+		  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_TORSO);
+		  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_TORSO);
 
-	  context.drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_RIGHT_HIP);
-	  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HIP, SimpleOpenNI.SKEL_RIGHT_KNEE);
-	  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_KNEE, SimpleOpenNI.SKEL_RIGHT_FOOT);  
+		  context.drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_LEFT_HIP);
+		  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HIP, SimpleOpenNI.SKEL_LEFT_KNEE);
+		  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_KNEE, SimpleOpenNI.SKEL_LEFT_FOOT);
+
+		  context.drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_RIGHT_HIP);
+		  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HIP, SimpleOpenNI.SKEL_RIGHT_KNEE);
+		  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_KNEE, SimpleOpenNI.SKEL_RIGHT_FOOT);  
 	}
 
 	// -----------------------------------------------------------------
 	// SimpleOpenNI events
 	
 	public void keyPressed(){
+		if (key == 'c'){
+			compression = !compression;
+		}
 		if (key == 32){ //space
 			if (Recording){
 				System.out.println("Recording End");
@@ -163,7 +191,7 @@ public class Main extends PApplet{
 				else{
 					log.record(jR);
 					
-					gesture.add(log.generateGesture(false));
+					gesture.add(log.generateGesture(compression));
 					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
 					System.out.println(log);
 					System.out.println("Gesture "+gesture.size()+" generated");
@@ -171,6 +199,9 @@ public class Main extends PApplet{
 					jR.clear();
 				}
 			}
+		}
+		if (key == 's'){
+			xmlGestureParser.save("Gesture.xml", gesture);
 		}
 	}
 

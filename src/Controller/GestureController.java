@@ -1,4 +1,4 @@
-package Controller;
+package controller;
 
 import java.util.Vector;
 
@@ -31,7 +31,7 @@ import SimpleOpenNI.*;
 public class GestureController{
 	/** Used only to toggle debug output */
 	@SuppressWarnings("unused")
-	private boolean debug = true;
+	private boolean debug = false;
 	
 	final String classTag = "gesture";
 	
@@ -113,23 +113,15 @@ public class GestureController{
 			return comp(this.X, o.X) == 0 && comp(this.Y, o.Y) == 0 && comp(this.Z, o.Z)==0;
 		}
 		public String toXML(){
-			return toXML(null);
-		}
-		public String toXML(String indent){
-			if (indent == null)
-				indent = "";
-			
 			String content = new String();
-			content +=indent+"<"+classTag+">"+'\n';
-			indent += '\t';
-			content +=J.toXML(indent);
-			content += xmlGestureParser.createElement("x", indent, X.toString());
-			content += xmlGestureParser.createElement("y", indent, Y.toString());
-			content += xmlGestureParser.createElement("z", indent, Z.toString());
-			content += xmlGestureParser.createElement("c", indent, C.toString());
-			content += xmlGestureParser.createElement("prev", indent, prev.toString());
-			indent = indent.substring(1);
-			content +=indent+"</"+classTag+">"+'\n';
+			content += "<"+classTag+">"+'\n';
+			content += J.toXML();
+			content += xmlGestureParser.createElement("x", X.toString());
+			content += xmlGestureParser.createElement("y", Y.toString());
+			content += xmlGestureParser.createElement("z", Z.toString());
+			content += xmlGestureParser.createElement("c", C.toString());
+			content += xmlGestureParser.createElement("prev", prev.toString());
+			content +="</"+classTag+">"+'\n';
 			return content;
 		}
 	}
@@ -164,8 +156,9 @@ public class GestureController{
 		 */
 		@Override
 		public boolean equals(Object o){
-			if (o instanceof JointPair)
-				return (this.First == ((JointPair)o).First && this.Second == ((JointPair)o).Second);
+			if (o instanceof JointPair){
+				return (this.First.equals(((JointPair)o).First) && this.Second.equals(((JointPair)o).Second));
+			}
 			return false;
 		}
 		/**
@@ -179,20 +172,22 @@ public class GestureController{
 			h.add(Second);
 			return h.hashCode();
 		}
-		public String toXML(){
-			return toXML(null);
+		/**Prints out first and second being enclosed by chevrons*/
+		@Override
+		public String toString(){
+			return "<"+First+", "+Second+">";
 		}
-		public String toXML(String indent){
-			if (indent == null)
-				indent = "";
+		/**
+		 * Creates and xml representation of this with no default leading tabs
+		 * @return String xml representation of this
+		 * @see JointPair#toXML(String)
+		 */
+		public String toXML(){
 			String context = new String();
-			context +=indent+"<"+classTag+">"+'\n';
-			
-			String ind = indent+'\t';
-			context += xmlGestureParser.createElement("first", ind, First.toString());
-			context += xmlGestureParser.createElement("second", ind, Second.toString());
-			
-			context +=indent+"</"+classTag+">"+'\n';
+			context +="<"+classTag+">"+'\n';
+			context += xmlGestureParser.createElement("first", First.toString());
+			context += xmlGestureParser.createElement("second", Second.toString());
+			context +="</"+classTag+">"+'\n';
 			return context;
 		}
 	}
@@ -267,6 +262,7 @@ public class GestureController{
 		
 		//Find the last appearance of the given joint pair in the sequence array
 		for(int i=sequence.size()-1;i>=0;i--){
+			if (debug) System.out.println(tmp.J.toString()+sequence.get(i).J.toString());
 			if (tmp.equalJoints(sequence.get(i))){
 					loc = i;
 					break;
@@ -691,25 +687,23 @@ public class GestureController{
 	}
 
 	public String toXML(){
-		return toXML(null);
-	}
-	public String toXML(String indent){
-		if (indent == null)
-			indent = "";
+
 		
 		String content = new String();
-		content +=indent+"<"+classTag+">"+'\n';
-		content += xmlGestureParser.createElement("name", indent+'\t', Name);
+		content +="<"+classTag+">"+'\n';
+		content += xmlGestureParser.createElement("name", Name);
 		
-		String ind = new String();
-		ind += indent+'\t';
+		content +="<sequence>"+'\n';
 		for (P e : sequence){
-			content += e.toXML(ind);
+			content += e.toXML();
 		}
+		content +="</sequence>"+'\n';
+		content +="<constants>"+'\n';
 		for (P e : constants){
-			content += e.toXML(ind);
+			content += e.toXML();
 		}
-		content +=indent+"</"+classTag+">"+'\n';
+		content +="</constants>"+'\n';
+		content +="</"+classTag+">"+'\n';
 		
 		return content;
 	}

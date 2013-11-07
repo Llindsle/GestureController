@@ -6,6 +6,8 @@
 .project
 .metadata
 tmp/
+bin/
+src/junk/
 *.tmp
 *.bak
 *.swp

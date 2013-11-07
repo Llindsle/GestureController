@@ -1,11 +1,12 @@
-package Controller;
+package controller;
 
 import java.util.Iterator;
 import java.util.Vector;
 
+import controller.GestureController.JointPair;
+
 import processing.core.PVector;
 
-import Controller.GestureController.JointPair;
 import SimpleOpenNI.SimpleOpenNI;
 
 /**
