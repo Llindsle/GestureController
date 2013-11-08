@@ -27,11 +27,11 @@ public class Main extends PApplet{
 	  gesture = new Vector<GestureController>();
 	  log = new GestureRecord();
 	  jR = new JointRecorder();
-	  jR.addJoint(SimpleOpenNI.SKEL_LEFT_ELBOW);
-	  jR.addJoint(SimpleOpenNI.SKEL_LEFT_HAND);
-	  jR.addJoint(SimpleOpenNI.SKEL_RIGHT_HAND);
-	  jR.addJoint(SimpleOpenNI.SKEL_RIGHT_ELBOW);
-	  //jR.addAll();
+//	  jR.addJoint(SimpleOpenNI.SKEL_LEFT_ELBOW);
+//	  jR.addJoint(SimpleOpenNI.SKEL_LEFT_HAND);
+//	  jR.addJoint(SimpleOpenNI.SKEL_RIGHT_HAND);
+//	  jR.addJoint(SimpleOpenNI.SKEL_RIGHT_ELBOW);
+	  jR.addAll();
 	   
 	  gesture.add(new GestureController("Wave"));
 	  createWaveGesture(gesture.lastElement());
@@ -129,8 +129,10 @@ public class Main extends PApplet{
 	void togglePlayBack(){
 		playback = !playback;
 		System.out.println("Playback mode ");
-		if(!playback)
+		if(!playback){
+			jR.resetPlayBack();
 			System.out.print("dis-");
+		}
 		System.out.println("engaged");
 	}
 	void viewRecord(){
@@ -228,7 +230,8 @@ public class Main extends PApplet{
 			}
 		}
 		if (key == 's'){
-			xmlGestureParser.save("Gesture.xml", gesture);
+			//xmlGestureParser.save("Gesture.xml", gesture);
+			xmlGestureParser.save("Gesture.xml", jR);
 		}
 	}
 

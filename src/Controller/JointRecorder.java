@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import controller.GestureController.P;
+
 import processing.core.PVector;
 
 import SimpleOpenNI.SimpleOpenNI;
@@ -26,6 +28,8 @@ public class JointRecorder {
 	/**Used only to print debug output*/
 	@SuppressWarnings("unused")
 	private boolean debug = true;
+	
+	final String classTag = "recorder";
 
 	/**SimpleOpenNI skeletal points to record*/
 	private Set<Integer> joints;
@@ -348,5 +352,23 @@ public class JointRecorder {
 			ret += m.toString()+'\n';
 		}
 		return ret;
+	}
+	public String toXML(){
+		String context = new String();
+		PVector v;
+		context +="<"+classTag+">"+'\n';
+		for (int i=0;i<recorder.size();i++){
+			context +="<tick>"+'\n';
+			context += i+" "+'\n';
+			String inner;
+			for (Integer j : joints){
+				inner = j.toString()+'\n';
+				v = recorder.get(i).get(j);
+				context += xmlGestureParser.createPVectorElem("joint", inner, v);
+			}
+			context +="</tick>"+'\n';
+		}
+		context += "</"+classTag+">"+'\n';
+		return context;
 	}
 }

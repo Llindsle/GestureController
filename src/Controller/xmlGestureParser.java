@@ -5,6 +5,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
+import processing.core.PVector;
+
 /**
  * Class to help save and load instances of other classes to an xml format
  * there may be a way to make java do this but I don't know it so I wrote 
@@ -19,6 +21,24 @@ public class xmlGestureParser {
 
 	//TODO add save function for JointRecorder
 	//TODO add load function for GestureController & JointRecorder
+	public static void save(String fileName, JointRecorder jR){
+		BufferedWriter wr;
+		try {
+			wr = new BufferedWriter(new FileWriter(fileName));
+		} catch (IOException e) {
+			System.out.println("IOException: "+e.getMessage());
+			e.printStackTrace();
+			return;
+		}
+		String content = new String();
+		
+		content +="<?xml version=\"1.0\"?>"+'\n';
+		content +="<root>"+'\n';
+		content +=jR.toXML();
+		content +="</root>"+'\n';
+		write(wr, content);
+		
+	}
 	public static void save(String fileName, List<GestureController> g){
 		BufferedWriter wr;
 		try {
@@ -84,5 +104,18 @@ public class xmlGestureParser {
 		element += text+'\n';
 		element += "</"+tag+">"+'\n';
 		return element;
+	}
+	protected static String createPVectorElem(String tag, String text, PVector e){
+		String elem = new String();
+		elem += "<"+tag+">"+'\n';
+		elem += text;
+		Float val = e.x;
+		elem += createElement("x", val.toString());
+		val = e.y;
+		elem += createElement("y", val.toString());
+		val = e.z;
+		elem += createElement("z", val.toString());
+		elem += "</"+tag+">"+'\n';
+		return elem;
 	}
 }

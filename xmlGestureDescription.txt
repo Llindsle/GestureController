@@ -2,6 +2,7 @@
 <root>
 	<epsilon> </epsilon>
 	<gesture> </gesture>
+	<recorder></recorder>
 </root>
 
 //gesture tree
@@ -27,3 +28,11 @@
 	<c> </c>
 	<prev> </prev>
 </p>
+
+//jointRecorder
+<recorder>
+	<tick>
+		<joint></joint>
+		<vector></vector>
+	</tick>
+</recorder>
