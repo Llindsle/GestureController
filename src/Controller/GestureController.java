@@ -211,8 +211,6 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		}
 	}
 	
-	//TODO Change sequence and constants from vectors to lists ?
-	
 	/**The Sequence if joint relationships describing the gesture */
 	private Vector<P> sequence; 
 	
@@ -306,8 +304,9 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		//If all axes are being ignored the constraint is null ignore it
 		if(x==null && y == null && z==null) return;
 		
-		//TODO Check all previous constraints and make sure that this constraint does not
-		//contradict with any of the previous constraints
+		/*TODO Check all previous constraints and make sure that this constraint does not
+		 *contradict with any of the previous constraints
+		 */
 		
 		constants.add(new P(J1,J2, x,y,z,false));
 	}
@@ -814,8 +813,9 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			average.add(sum);
 		}
 		
-		//TODO run average against original using average points as the alpha points
-		//for reduce()
+		/*TODO run average against original using average points as the alpha points
+		 *for reduce()
+		 */
 		
 		sequence = average;
 	}

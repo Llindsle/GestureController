@@ -25,7 +25,7 @@ import SimpleOpenNI.SimpleOpenNI;
  * @author Levi Lindsley
  *
  */
-public class JointRecorder implements xmlGestureParser{
+public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	/**Used only to print debug output*/
 	@SuppressWarnings("unused")
 	private boolean debug = true;
@@ -354,7 +354,7 @@ public class JointRecorder implements xmlGestureParser{
 		}
 		return ret;
 	}
-	public static void save(String fileName,  JointRecorder jR){
+	public void save(String fileName){
 		BufferedWriter wr;
 		try {
 			wr = new BufferedWriter(new FileWriter(fileName));
@@ -367,10 +367,30 @@ public class JointRecorder implements xmlGestureParser{
 		
 		content +="<?xml version=\"1.0\"?>"+'\n';
 		content +="<root>"+'\n';
-		content +=jR.toXML();
+		content +=toXML();
 		content +="</root>"+'\n';
-		write(wr, content);
+		xmlStatics.write(wr, content);
 		
+	}
+	@Override
+	public void save(String fileName, List<JointRecorder> jR) {
+		BufferedWriter wr;
+		try {
+			wr = new BufferedWriter(new FileWriter(fileName));
+		} catch (IOException e) {
+			System.out.println("IOException: "+e.getMessage());
+			e.printStackTrace();
+			return;
+		}
+		String content = new String();
+		
+		content +="<?xml version=\"1.0\"?>"+'\n';
+		content +="<root>"+'\n';
+		xmlStatics.write(wr, content);
+		for (JointRecorder r : jR){
+			xmlStatics.write(wr, r.toXML());
+		}
+		xmlStatics.write(wr,"</root>"+'\n');
 	}
 	public String toXML(){
 		String context = new String();
@@ -383,11 +403,12 @@ public class JointRecorder implements xmlGestureParser{
 			for (Integer j : joints){
 				inner = j.toString()+'\n';
 				v = recorder.get(i).get(j);
-				context += xmlGestureParser.createPVectorElem("joint", inner, v);
+				context += xmlStatics.createPVectorElem("joint", inner, v);
 			}
 			context +="</tick>"+'\n';
 		}
 		context += "</"+classTag+">"+'\n';
 		return context;
 	}
+
 }

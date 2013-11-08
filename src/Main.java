@@ -43,7 +43,7 @@ public class Main extends PApplet{
 //	  gesture.add(new GestureController("Stir"));
 //	  createStirGesture(gesture.lastElement());
 	  
-	  xmlGestureParser.save("Gesture.xml", gesture);
+//	  xmlGestureParser.save("Gesture.xml", gesture);
 //	  
 //	  gesture.add(new GestureController("High Wave"));
 //	  createWaveGesture(gesture.lastElement());
@@ -231,7 +231,7 @@ public class Main extends PApplet{
 		}
 		if (key == 's'){
 			//xmlGestureParser.save("Gesture.xml", gesture);
-			xmlGestureParser.save("Gesture.xml", jR);
+			//xmlGestureParser.save("Gesture.xml", jR);
 		}
 	}
 
