@@ -1,6 +1,7 @@
 package controller;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ public class JointRecorder {
 	public JointRecorder(){
 		joints = new TreeSet<Integer>();
 		recorder = new ArrayList<Map<Integer, PVector>>();
+		playBackTick = 0;
 	}
 	/**
 	 * Adds a joint if it is not already in the set. Joints may not be added
@@ -124,20 +126,65 @@ public class JointRecorder {
 		}
 		return recorder.get(tick).get(joint);
 	}
-	public void playBack(List<Integer> focus){
-
-		
+	/**
+	 * Sets playBackTick to 0 restarting play back
+	 */
+	public void resetPlayBack(){
+		playBackTick = 0;
 	}
-	public void playBack(int tick, List<Integer> focus){
+	/**
+	 * Calls {@link JointRecorder#playBack(Set)} with the joints that this
+	 * records
+	 * 
+	 * @return
+	 * 		List of PVector[2] each representing the coordinates of a joint
+	 * @see JointRecorder#playBack(Set)
+	 */
+	public List<PVector[]> playBack(){
+		return playBack(joints);
+	}
+	/**
+	 * Steps through the recording one tick per call to this function the 
+	 * playBackTick is auto incremented. Joint pairs are determined by generic
+	 * human anatomy and joint pairs are only included in the result if both
+	 * joints are available in the recording and in focus.
+	 * 
+	 * @param focus : list of joints to include in return vector
+	 * @return
+	 * 		List of PVector[2] each representing the coordinates of a joint
+	 * @see JointRecorder#playBack(int, Set)
+	 */
+	public List<PVector []> playBack(Collection<Integer> focus){
+		playBackTick ++;
+		if (playBackTick > recorder.size()){
+			return null;
+		}
+		return playBack(playBackTick-1, focus);
+	}
+	/**
+	 * Joint pairs are determined by generic human anatomy and joint pairs 
+	 * are only included in the result if both joints are available in the 
+	 * recording and in focus.
+	 * 
+	 * @param tick : recording tick to use for return value
+	 * @param focus : collection of joints
+	 * @return
+	 * 		List of PVector[2] each representing the coordinates of a joint
+	 * @see JointRecorder#playBack(Set)
+	 */
+	public List<PVector []> playBack(int tick, Collection<Integer> focus){
+		if (tick < 0 || tick >= recorder.size()){
+			return null;
+		}
 		List<PVector []> coordinites = new ArrayList<PVector[]>();
 		PVector v[] = null;
 		int con1, con2;
-		
-//		  context.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_NECK);
+
 		con1 = SimpleOpenNI.SKEL_HEAD;
 		con2 = SimpleOpenNI.SKEL_NECK;
 		v = getJointPosition(tick, con1, con2, focus);
 		if (v!= null) coordinites.add(v);
+//		  context.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_NECK);
 		
 		con1 = con2;
 		con2 = SimpleOpenNI.SKEL_LEFT_SHOULDER;
@@ -221,9 +268,20 @@ public class JointRecorder {
 		v = getJointPosition(tick, con1, con2, focus);
 		if (v!= null) coordinites.add(v);
 //		  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_KNEE, SimpleOpenNI.SKEL_RIGHT_FOOT);  
-		
+		return coordinites;
 	}
-	private PVector[] getJointPosition(int tick, int con1, int con2, List<Integer>focus){
+	/**
+	 * Retrieves the position of two joints as specified by con1 and con2
+	 * the joints are only retrieved if both contained in this and in focus.
+	 * @param tick : time tick to pull coordinates from
+	 * @param con1 : joint one
+	 * @param con2 : joint two
+	 * @param focus : collection of focus joints
+	 * @return
+	 * 		Position of two joints as a PVector[2]
+	 * 	<p>	null if the joints are not available/focused
+	 */
+	private PVector[] getJointPosition(int tick, int con1, int con2, Collection<Integer>focus){
 		if ((contains(con1)&&contains(con2))&&focus.contains(con1)&&focus.contains(con2)){
 			PVector[] ret = new PVector[2];
 			ret[0] = recorder.get(tick).get(con1);
@@ -231,9 +289,6 @@ public class JointRecorder {
 			return ret;
 		}
 		return null;
-	}
-	public void playBack(int startTick, int endTick, List<Integer> focus){
-		
 	}
 	/**
 	 * @return

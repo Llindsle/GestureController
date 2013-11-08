@@ -14,6 +14,7 @@ public class Main extends PApplet{
 	boolean debug = true;
 	boolean Recording = false;
 	boolean compression = false;
+	boolean playback = false;
 	
 	Vector<GestureController> gesture;
 	GestureRecord log;
@@ -26,7 +27,11 @@ public class Main extends PApplet{
 	  gesture = new Vector<GestureController>();
 	  log = new GestureRecord();
 	  jR = new JointRecorder();
-	  jR.addAll();
+	  jR.addJoint(SimpleOpenNI.SKEL_LEFT_ELBOW);
+	  jR.addJoint(SimpleOpenNI.SKEL_LEFT_HAND);
+	  jR.addJoint(SimpleOpenNI.SKEL_RIGHT_HAND);
+	  jR.addJoint(SimpleOpenNI.SKEL_RIGHT_ELBOW);
+	  //jR.addAll();
 	   
 	  gesture.add(new GestureController("Wave"));
 	  createWaveGesture(gesture.lastElement());
@@ -96,6 +101,11 @@ public class Main extends PApplet{
 	  
 	  // draw depthImageMap
 	  image(context.depthImage(),0,0);
+	  
+	  if(playback){
+		  viewRecord();
+		  return;
+	  }
 	  // draw the skeleton if it's available
 	  int[] userList = context.getUsers();
 	  for(int i=0;i<userList.length;i++)
@@ -116,7 +126,21 @@ public class Main extends PApplet{
 	  }    
 	  
 	}
-	void drawSkeletion(List<PVector[]> points){
+	void togglePlayBack(){
+		playback = !playback;
+		System.out.println("Playback mode ");
+		if(!playback)
+			System.out.print("dis-");
+		System.out.println("engaged");
+	}
+	void viewRecord(){
+		drawSkeleton(jR.playBack());
+	}
+	void drawSkeleton(List<PVector[]> points){
+		if (points == null){
+			togglePlayBack();
+			return;
+		}
 		for (PVector[] V : points){
 			//not the best use as that third vector go the axe but eh
 			line (V[0].x, V[0].y, V[1].x, V[1].y);
@@ -175,6 +199,9 @@ public class Main extends PApplet{
 	// SimpleOpenNI events
 	
 	public void keyPressed(){
+		if (key == 'p'){
+			togglePlayBack();
+		}
 		if (key == 'c'){
 			compression = !compression;
 		}
