@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
@@ -33,189 +34,23 @@ import SimpleOpenNI.*;
  * @author Levi Lindsley
  *
  */
-public class GestureController implements xmlGestureParser<GestureController>{
+public class GestureController implements xmlGestureParser<GestureController>, 
+  Iterable<JointRelation>{
+	
 	/** Used only to toggle debug output */
 	@SuppressWarnings("unused")
 	private boolean debug = false;
 	
 	final private String classTag = "gesture";
 	
-	/**
-	 * Class to hold various information about joins and relation to each other
-	 * and the other actions in sequence.
-	 * 
-	 * @author Levi Lindsley
-	 *
-	 */
-	class P{
-		final private String classTag = "p";
-		
-		/**J Pair of SimpleOpenNI joints */
-		JointPair J;
-		
-		/**X relationship between JointTwo and JointOne */
-		Integer X;
-		
-		/**Y relationship between JointTwo and JointOne */
-		Integer Y;
-		
-		/**Z relationship between JointTwo and JointOne */
-		Integer Z;
-		
-		/**Determines if this action is concurrent with the action directly after it */
-		Boolean C;
-		
-		/**Set to the previous appearance of ( JointOne, JointTwo ) */
-		Integer prev; 
-		
-		P(){
-			J = null;
-			X = Y = Z = null;
-			C = null;
-			prev = -1;
-		}
-		/**
-		 * The constructor called by Gesturecontroller.addPoint();
-		 * @param J1 : SimpleOpenNI constant for a joint 
-		 * @param J2 : SimpleOpenNI constant for a joint
-		 * @param x : x relationship between J2 and J1
-		 * @param y : y relationship between J2 and J1
-		 * @param z : z relationship between J2 and J1
-		 * @param conn : 
-		 * Is this concurrent with the next action in sequence, should not be true for last action
-		 */
-		P(int J1, int J2,Integer x, Integer y, Integer z, boolean conn){
-			J = new JointPair(J1,J2);
-			X = x; 
-			Y = y;
-			Z = z;
-			C = conn;
-			prev = null;
-		}
-		/**
-		 * Sets the previous value this is found after the JointOne and JointTwo are know
-		 * so it is called after the constructor but could be included in the constructor 
-		 * at a later time.
-		 * 
-		 * @param p : The value to set previous to
-		 */
-		void setPrev(int p){
-			prev = p;
-		}
-		/**
-		 * Determines if two instances have the same Joint locations used for finding the 
-		 * previous value
-		 * 
-		 * @param o : Another P class to compare to
-		 * @return
-		 * True if BOTH joints in this and o are equivalent
-		 */
-		public boolean equalJoints(P o){
-			return J.equals(o.J);
-		}
-		/**
-		 * Determines if two instances have angular locations that are within Epsilon of each other
-		 * 
-		 * @param o : Other instance to compare to
-		 * @return
-		 * 		True if angles along all axes are equivalent where 
-		 * 		this.X == o.X && this.Y == o.Y && this.Z == o.Z +- Epsion.
-		 */
-		public boolean equalsCoordinates(P o){
-			return comp(this.X, o.X) == 0 && comp(this.Y, o.Y) == 0 && comp(this.Z, o.Z)==0;
-		}
-		public String toString(){
-			String ret = new String();
-			ret += "{"+J.toString();
-			ret += " < "+X+", "+Y+", "+Z+">";
-			ret += " C:"+C+" P:"+prev+"}";
-			return ret;
-		}
-		public String toXML(){
-			String content = new String();
-			content += "<"+classTag+">"+'\n';
-			content += J.toXML();
-			content += xmlStatics.createElement("x", X.toString());
-			content += xmlStatics.createElement("y", Y.toString());
-			content += xmlStatics.createElement("z", Z.toString());
-			content += xmlStatics.createElement("c", C.toString());
-			content += xmlStatics.createElement("prev", prev.toString());
-			content +="</"+classTag+">"+'\n';
-			return content;
-		}
-	}
-	/**
-	 * Class used to hold pairs of joints as all recordings are done in two
-	 * joint format currently this allows for comparison between linked joints and
-	 * access to both joints being compared. The joint represented by First is compared
-	 * to the joint represented by Second for gesture purposes. 
-	 * 
-	 * @author Levi Lindsley
-	 *
-	 */
-	class JointPair{
-		final private String classTag = "j";
-		/** First Joint in focus */
-		Integer First;
-		
-		/** Second Joint in focus */
-		Integer Second;
-
-		/**
-		 * Initialize First and Second with the values f and s
-		 * @param f : Value to initialize First with
-		 * @param s : Value to initialize Second with
-		 */
-		JointPair(int f, int s){
-			First = new Integer(f);
-			Second = new Integer(s);
-		}
-		/**
-		 * Override of equals to check for comparison between two JointPairs
-		 */
-		@Override
-		public boolean equals(Object o){
-			if (o instanceof JointPair){
-				return (this.First.equals(((JointPair)o).First) && this.Second.equals(((JointPair)o).Second));
-			}
-			return false;
-		}
-		/**
-		 * Override of hashCode because equals got an override now the hashCode will be
-		 * equal when equals() returns true
-		 */
-		@Override
-		public int hashCode(){
-			Vector<Integer> h = new Vector<Integer>();
-			h.add(First);
-			h.add(Second);
-			return h.hashCode();
-		}
-		/**Prints out first and second being enclosed by chevrons*/
-		@Override
-		public String toString(){
-			return "<"+First+", "+Second+">";
-		}
-		/**
-		 * Creates and xml representation of this with no default leading tabs
-		 * @return String xml representation of this
-		 * @see JointPair#toXML(String)
-		 */
-		public String toXML(){
-			String context = new String();
-			context +="<"+classTag+">"+'\n';
-			context += xmlStatics.createElement("first", First.toString());
-			context += xmlStatics.createElement("second", Second.toString());
-			context +="</"+classTag+">"+'\n';
-			return context;
-		}
-	}
-	
 	/**The Sequence if joint relationships describing the gesture */
-	private Vector<P> sequence; 
+	private Vector<JointRelation> sequence; 
 	
+	/*This is not used for recorded gestures and as focus is moving to using and
+	* identifying recorded gestures this is removed.
+	*/
 	/**A list of constant positions that must be true for the gesture to complete*/
-	private Vector<P> constants; 
+	//private Vector<P> constants; 
 	
 	/**Name Identifier of the Gesture*/
 	public String Name;
@@ -255,8 +90,8 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * Used with constructor and may be useful for reseting gesture sequences.
 	 */
 	private void init(){
-		sequence = new Vector<P>();
-		constants = new Vector<P>();
+		sequence = new Vector<JointRelation>();
+		//constants = new Vector<P>();
 		step = 0;
 	}
 	/**
@@ -275,7 +110,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		
 		//TODO Check concurrent sequence to assure unique joint pairs
 		
-		P tmp = new P(J1,J2,x,y,z,conn); //Create new tmp point using values given
+		JointRelation tmp = new JointRelation(J1,J2,x,y,z,conn); //Create new tmp point using values given
 		
 		//Find the last appearance of the given joint pair in the sequence array
 		for(int i=sequence.size()-1;i>=0;i--){
@@ -298,18 +133,21 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * @param x : Valid values +- [0 , 89] or null which ignores this axis
 	 * @param y : Valid values +- [0 , 89] or null which ignores this axis
 	 * @param z : Valid values +- [0 , 89] or null which ignores this axis
+	 * @deprecated
+	 * 		function has been removed
 	 */
 	public void addConstant(int J1, int J2,
 			Integer x, Integer y, Integer z){
-		//If all axes are being ignored the constraint is null ignore it
-		if(x==null && y == null && z==null) return;
-		
-		/*TODO Check all previous constraints and make sure that this constraint does not
-		 *contradict with any of the previous constraints
-		 */
-		
-		constants.add(new P(J1,J2, x,y,z,false));
+//		//If all axes are being ignored the constraint is null ignore it
+//		if(x==null && y == null && z==null) return;
+//		
+//		/*TODO Check all previous constraints and make sure that this constraint does not
+//		 *contradict with any of the previous constraints
+//		 */
+//		
+//		constants.add(new P(J1,J2, x,y,z,false));
 	}
+	
 	/**
 	 * This function should be called to check for gesture completion and to update the gesture.
 	 * 
@@ -371,6 +209,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			step = Hold; 
 		}
 		
+		/*
 		// Check to assure that the constant bounds are being upheld
 		for (P c : constants){
 			//if the constants are being violated the reset the gesture
@@ -379,6 +218,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				return false;
 			}
 		}
+		*/
 		
 		//The gesture was not finished return false
 		return false;
@@ -424,6 +264,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			step = Hold; 
 		}
 		
+		/*
 		// Check to assure that the constant bounds are being upheld
 		for (P c : constants){
 			//if the constants are being violated the reset the gesture
@@ -431,6 +272,8 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				step = 0; //reset gesture
 			}
 		}
+		*/
+		
 		return false;
 	}
 	/**
@@ -531,8 +374,10 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * @param user : Id of user to get skeleton from context
 	 * @return
 	 * 		True if the relation ship matches given relationship from c
+	 * @deprecated
 	 */
-	private boolean constMatch(P c, SimpleOpenNI context, int user){
+	@SuppressWarnings("unused")
+	private boolean constMatch(JointRelation c, SimpleOpenNI context, int user){
 
 		//if not tracking user then that user auto fails
 		if (!context.isTrackingSkeleton(user)){
@@ -565,7 +410,13 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		//it did not fail thus it passed
 		return true;
 	}
-	private Boolean constMatch(P c, JointRecorder context, int tick){
+	/**
+	 * @deprecated
+	 * @see
+	 * 	GestureController#constMatch(JointRelation,SimpleOpenNI,int)
+	 */
+	@SuppressWarnings("unused")
+	private Boolean constMatch(JointRelation c, JointRecorder context, int tick){
 
 		//if not tracking user then that user auto fails
 		if (tick < 0 || tick >= context.getTicks()){
@@ -610,7 +461,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * step in the sequence
 	 */
 	private boolean stepMatch(PVector V){
-		P target = sequence.get(step); //get current step
+		JointRelation target = sequence.get(step); //get current step
 		//check for x,y,and z matches againts target
 		if (comp(V.x, target.X) ==0 && comp(V.y, target.Y)==0 && comp(V.z, target.Z)==0)
 			return true; //match was good
@@ -630,7 +481,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 */
 	private boolean midMatch(PVector V){
 		
-		P cur = sequence.get(step); //get current step
+		JointRelation cur = sequence.get(step); //get current step
 		
 		//First step of joint type
 		if(cur.prev == -1){
@@ -638,7 +489,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		}
 		
 		//All Other steps
-		P prev = sequence.get(cur.prev); //get previous of equal joint pair step as denoted by cur.prev
+		JointRelation prev = sequence.get(cur.prev); //get previous of equal joint pair step as denoted by cur.prev
 
 		//check relation between all coordinates return true if all are within range else false
 		return (chkCoord(cur.X, V.x, prev.X) && chkCoord(cur.Y, V.y, prev.Y) && chkCoord(cur.Z, V.z, prev.Z));
@@ -782,7 +633,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 */
 	protected void simplifyGesture(){
 		boolean reduced[] = new boolean[sequence.size()];
-		List<List<P>> compress = new ArrayList<List<P>>();
+		List<List<JointRelation>> compress = new ArrayList<List<JointRelation>>();
 		for (int i = sequence.size()-1;i>=0;i--){
 			if(!reduced[i])
 				compress.add(reduce(i,null,reduced));
@@ -795,13 +646,13 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		 * 
 		 * May want to move the average function into P class.
 		 */
-		Vector<P> average = new Vector<P>();
-		P sum;
-		for (List<P> l : compress){
-			sum = new P();
+		Vector<JointRelation> average = new Vector<JointRelation>();
+		JointRelation sum;
+		for (List<JointRelation> l : compress){
+			sum = new JointRelation();
 			sum.J = new JointPair(l.get(0).J.First, l.get(0).J.Second);
 			sum.C = false;
-			for (P p : l){
+			for (JointRelation p : l){
 				sum.X += p.X;
 				sum.Y += p.Y;
 				sum.Z += p.Z;
@@ -820,34 +671,34 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		sequence = average;
 	}
 
-	private List<P> reduce(int i,P alpha, boolean visited[]){
+	private List<JointRelation> reduce(int i,JointRelation alpha, boolean visited[]){
 		if (visited[i])
 			return null;
 		visited[i] = true;
 		
-		P current = sequence.get(i);
+		JointRelation current = sequence.get(i);
 		
 		//hit the last element in the sequence
 		if (current.prev==null || current.prev == -1){
-			List<P> l = new ArrayList<P>();
+			List<JointRelation> l = new ArrayList<JointRelation>();
 			l.add(current);
 			return l;
 		}
 		
 		//first element in sequence
 		if (alpha == null){
-			List<P> l = reduce(current.prev,alpha,visited);
+			List<JointRelation> l = reduce(current.prev,alpha,visited);
 			if (l==null)
-				l = new ArrayList<P>();
+				l = new ArrayList<JointRelation>();
 			l.add(current);
 			return l;
 		}
 		
 		if (comp(current.X,alpha.X)==0 && comp(current.Y, alpha.Y)==0 
 				&& comp(current.Z, alpha.Z)==0){
-			List<P> l = reduce(current.prev,alpha,visited);
+			List<JointRelation> l = reduce(current.prev,alpha,visited);
 			if (l==null)
-				l = new ArrayList<P>();
+				l = new ArrayList<JointRelation>();
 			l.add(current);
 			return l;
 			
@@ -886,7 +737,12 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	public static Integer getTolerance(){
 		return Epsilon;
 	}
-
+	public int size(){
+		return sequence.size();
+	}
+	public void clear(){
+		sequence.clear();
+	}
 	public void save(String fileName, List<GestureController> g){
 		BufferedWriter wr;
 		try {
@@ -942,17 +798,26 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		content += xmlStatics.createElement("name", Name);
 		
 		content +="<sequence>"+'\n';
-		for (P e : sequence){
+		for (JointRelation e : sequence){
 			content += e.toXML();
 		}
 		content +="</sequence>"+'\n';
+		/*
 		content +="<constants>"+'\n';
 		for (P e : constants){
 			content += e.toXML();
 		}
 		content +="</constants>"+'\n';
+		*/
 		content +="</"+classTag+">"+'\n';
 		
 		return content;
+	}
+	public boolean isEmpty() {
+		return sequence.isEmpty();
+	}
+	@Override
+	public Iterator<JointRelation> iterator() {
+		return sequence.iterator();
 	}
 }

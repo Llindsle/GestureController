@@ -1,13 +1,8 @@
 package controller;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
-
-import controller.GestureController.JointPair;
 
 import processing.core.PVector;
 
@@ -22,7 +17,11 @@ import SimpleOpenNI.SimpleOpenNI;
  * @author Levi Lindsley
  *
  */
-public class GestureRecord{
+public class GestureRecord extends GestureController{
+	/* TODO rework this as extension of GestureController that
+	 * writes the gesture as it reads, not sure why I didn't do that 
+	 * in the first place.
+	 */
 	/**Used only for debug purposes */
 	@SuppressWarnings("unused")
 	private boolean debug = true;
@@ -31,18 +30,19 @@ public class GestureRecord{
 	private Vector <JointPair> Focus;
 	
 	/**A log of each focus joint pair relation for every call to record*/
-	private Vector<Vector<PVector>> recorder;
+	//private Vector<Vector<PVector>> recorder;
 	
 	/**An instance of GestureController to access its functions*/
-	private GestureController masterControl;
+	//private GestureController masterControl;
 	
 	/**
 	 * Default Constructor, initializes control vectors
 	 */
 	public GestureRecord(){
+		super();
 		Focus = new Vector<JointPair>();
-		recorder = new Vector<Vector<PVector>>();
-		masterControl = new GestureController();
+		//recorder = new Vector<Vector<PVector>>();
+		//masterControl = new GestureController();
 	}
 	/**
 	 * If there is no recorded data, add a new joint pair to Focus. 
@@ -59,7 +59,7 @@ public class GestureRecord{
 			return false;
 		}
 		//create a new JointPair with specified joints
-		JointPair o = masterControl.new JointPair(first, second);
+		JointPair o = new JointPair(first, second);
 		
 		//Focus pairs may not be duplicated
 		if (Focus.contains(o))
@@ -67,7 +67,7 @@ public class GestureRecord{
 		
 		//Add new focus and increase the number of vectors in recorder
 		Focus.add(o);
-		recorder.add(new Vector<PVector>());
+		//recorder.add(new Vector<PVector>());
 		return true;
 	}
 	/**
@@ -80,23 +80,25 @@ public class GestureRecord{
 	public void record(SimpleOpenNI context, int user){
 		if (!context.isTrackingSkeleton(user))
 			return;
-		for (int i=0;i<Focus.size();i++){
-			//get relevant joint pair
-			JointPair X = Focus.get(i);
+		int i=0;
+		for (JointPair jP : Focus){
 			
 			//get coordinates for both joints
-			PVector jointOne = GestureController.getRealCoordinites(context, user, X.First);
-			PVector jointTwo = GestureController.getRealCoordinites(context, user, X.Second);
+			PVector jointOne = super.getRealCoordinites(context, user, jP.First);
+			PVector jointTwo = super.getRealCoordinites(context, user, jP.Second);
 			
 			//coordinate retrieval failed on at least one joint
 			if(jointOne == null || jointTwo == null)
 				return;
 			
 			//compare joints and get relative position
-			PVector Relative = GestureController.compareJointPositions(jointOne, jointTwo);
+			PVector Relative = super.compareJointPositions(jointOne, jointTwo);
 			
+			boolean conn = (i<Focus.size()-1);
 			//add relative coordinates to proper joint pair record vector
-			recorder.get(i).add(Relative);
+			super.addPoint(jP.First,jP.Second, (int)Relative.x, (int)Relative.y,(int) Relative.z, conn);
+			//recorder.get(i).add(Relative);
+			i++;
 		}
 	}
 	/**
@@ -126,17 +128,21 @@ public class GestureRecord{
 		
 		//Add recorded data in range [startTime, endTime)
 		for (int i=startTick;i<endTick;i++){
-			Iterator<Vector<PVector>> itter = recorder.iterator();
+			//Iterator<Vector<PVector>> itter = recorder.iterator();
+			int j=0;
 			for (JointPair jP : Focus){
 				//Get Joints from the log at time i
 				PVector jointOne = log.getJoint(i, jP.First);
 				PVector jointTwo = log.getJoint(i, jP.Second);
 				
 				//Calculate relation between the joints
-				PVector relative = GestureController.compareJointPositions(jointOne, jointTwo);
+				PVector relative = super.compareJointPositions(jointOne, jointTwo);
 				
 				//Add to the recorder
-				itter.next().add(relative);
+				boolean conn = (j<Focus.size()-1);
+				super.addPoint(jP.First,jP.Second, (int)relative.x, (int)relative.y,(int) relative.z, conn);
+				//itter.next().add(relative);
+				j++;
 			}
 		}
 	}
@@ -152,6 +158,8 @@ public class GestureRecord{
 	 * of the sequence in R.
 	 */
 	private void compressRecording(){
+		super.simplifyGesture();
+		/* Redacted
 		int i=0; //index counter
 
 		//primary sequence to compare to
@@ -202,6 +210,7 @@ public class GestureRecord{
 				i++;
 			}
 		}
+		*/
 	}
 	/**
 	 * Creates a GestureController that represents the minimum number of steps
@@ -219,12 +228,13 @@ public class GestureRecord{
 		}
 		
 		if (compress){
-			int oldNodes = recorder.firstElement().size();
+			int oldNodes = super.size();
 			System.out.println("Compressing Recording");
 			compressRecording();
-			System.out.println("Record Compressed from "+oldNodes+" to "+recorder.firstElement().size());
+			System.out.println("Record Compressed from "+oldNodes+" to "+super.size());
 		}
-		
+		return (GestureController)this; //downcast
+		/*
 		//new gestureController to return
 		GestureController control = new GestureController();
 
@@ -249,7 +259,8 @@ public class GestureRecord{
 			control.addPoint(F.First, F.Second, (int)V.x, (int)V.y, (int)V.z, false);
 		}
 		
-		return control; 
+		return control;
+		*/ 
 	}
 	/**
 	 * Adds a recorded node? I'm confused the name seemed obvious.
@@ -261,6 +272,7 @@ public class GestureRecord{
 	 * @return
 	 * 		True if there is a focus pair f to add t into the recording of.
 	 */
+	/*Redacted
 	boolean addNode(JointPair f, PVector t){
 		//TODO Make this less able to break things
 		int index = Focus.indexOf(f);
@@ -271,6 +283,7 @@ public class GestureRecord{
 		
 		return true;
 	}
+	*/
 	/**
 	 * Creates and returns a copy of focus
 	 * @return
@@ -278,9 +291,7 @@ public class GestureRecord{
 	 */
 	public Vector<JointPair> getFocus(){
 		Vector<JointPair> v = new Vector<JointPair>();
-		for (JointPair j : Focus){
-			v.add(masterControl.new JointPair(j.First, j.Second));
-		}
+		v.addAll(Focus);
 		return v;
 	}
 	/**
@@ -300,9 +311,7 @@ public class GestureRecord{
 	 * Clear all recorded, data focus pairs are preserved.
 	 */
 	public void resetRecording(){
-		for (int i=0;i<recorder.size();i++){
-			recorder.get(i).clear();
-		}
+		super.clear();
 	}
 	/**
 	 * Returns data about this recording in a nice string format
@@ -320,12 +329,18 @@ public class GestureRecord{
 			ret += "No Recorded Data"+nl;
 			return ret;
 		}
-		ret += "Number of recorded steps: "+recorder.firstElement().size()+nl;
-		
-		
-		JointPair F;
-		PVector V;
-		
+		ret += "Number of recorded steps: "+super.size()+nl;
+
+		int i=0;
+		ret +=i+": ";
+		for(JointRelation jR : this){
+			ret += jR.toString()+", ";
+			if (!jR.C){
+				i++;
+				ret += '\n'+i+": ";
+			}
+		}
+		/*
 		//Show all focus pairs on a line and display each step on a new line
 		for (int i=0;i<recorder.firstElement().size();i++){
 			ret += i+": { ";
@@ -336,6 +351,7 @@ public class GestureRecord{
 			}
 			ret += " }"+nl;
 		}
+		*/
 		return ret;
 	}
 	/**
@@ -349,15 +365,5 @@ public class GestureRecord{
 	public String toXML(){
 		GestureController gC = generateGesture(false);
 		return gC.toXML();
-	}
-	/**
-	 * Returns true if there is no recorded data. Will return true if there is focus pairs but
-	 * no data has been recorded.
-	 * 
-	 * @return
-	 * 		True if no data is recored.
-	 */
-	public boolean isEmpty(){
-		return (recorder.isEmpty() || recorder.firstElement().isEmpty());
 	}
 }

@@ -59,4 +59,6 @@ public interface xmlGestureParser<E> {
 	void save(String fileName, List<E> e);
 	
 	void save(String fileName);
+	
+	String toXML();
 }

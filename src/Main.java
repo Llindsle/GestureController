@@ -22,7 +22,6 @@ public class Main extends PApplet{
 
 	public void setup()
 	{
-		
 	  context = new SimpleOpenNI(this);
 	  gesture = new Vector<GestureController>();
 	  log = new GestureRecord();

@@ -22,6 +22,11 @@ import java.util.List;
  *
  */
 public class AggregateController extends GestureController {
+	/*May implement collection<GestureController> with this class to get 
+	 * for some reason that seems like it could help
+	 * may be able to create a comparator and place a global that is
+	 * compared against and get a list of nodes in the order of closeness
+	 */
 	
 		/*Aggregate control into a standard/average/normalized gesture.
 		 * This will be used to determine 'distance' for the k-nearest

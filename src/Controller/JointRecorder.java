@@ -400,7 +400,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 			context +="<tick>"+'\n';
 			context += i+" "+'\n';
 			String inner;
-			for (Integer j : joints){
+			for (Integer j : joints){ 
 				inner = j.toString()+'\n';
 				v = recorder.get(i).get(j);
 				context += xmlStatics.createPVectorElem("joint", inner, v);
