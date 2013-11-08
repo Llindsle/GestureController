@@ -350,7 +350,7 @@ public class GestureController{
 			//Some part of the gesture failed, reset the entire gesture
 			if (N == false){
 				step = 0; //Reset gesture
-				break; //end the while loop a step failed
+				return false; //end the while loop a step failed
 			}
 			/*
 			 * A part hit a holding pattern thus forcing the entire concurrent sequence into
@@ -360,7 +360,7 @@ public class GestureController{
 			if (N == null){
 				wait = true; //holding pattern true
 			}
-			step ++; //continue to the next part of the gesture
+			N = next(context, user); //continue to the next part of the gesture
 		}
 		
 		// If any part hit a holding patters reset the concurrent gesture to the first gesture
@@ -374,10 +374,61 @@ public class GestureController{
 			//if the constants are being violated the reset the gesture
 			if (!constMatch(c,context,user)){
 				step = 0; //reset gesture
+				return false;
 			}
 		}
 		
 		//The gesture was not finished return false
+		return false;
+	}
+	public boolean isComplete(JointRecorder context, int tick){
+		if (step == context.getTicks()){
+			step = 0;
+			return true;
+		}
+
+		Boolean N = next(context, tick);//call next function
+		
+		
+		boolean wait = false; //Used to initiate holding pattern on concurrent gestures
+		int Hold=step; //The holding pattern location for a concurrent gesture
+		
+		/*
+		 * Checks for concurrent gesture completion, holding, or failure
+		 * Note the step-1 this is to check if the previous gesture is  listed as  concurrent
+		 * with the current gesture so that there is a non-concurrent gesture between sets of
+		 * concurrent gestures
+		 */
+		while (step > 0 && step < sequence.size() &&sequence.get(step-1).C){
+			//Some part of the gesture failed, reset the entire gesture
+			if (N == false){
+				step = 0; //Reset gesture
+				break; //end the while loop a step failed
+			}
+			/*
+			 * A part hit a holding pattern thus forcing the entire concurrent sequence into
+			 * a holding pattern but all parts of the concurrent sequence must be checked for
+			 * failure before so can't stop the while loop
+			 */
+			if (N == null){
+				wait = true; //holding pattern true
+			}
+			N = next(context, tick);//continue to the next part of the gesture
+		}
+		
+		// If any part hit a holding patters reset the concurrent gesture to the first gesture
+		// in the sequence as remembered by Hold
+		if (wait){
+			step = Hold; 
+		}
+		
+		// Check to assure that the constant bounds are being upheld
+		for (P c : constants){
+			//if the constants are being violated the reset the gesture
+			if (!constMatch(c,context,tick)){
+				step = 0; //reset gesture
+			}
+		}
 		return false;
 	}
 	/**
@@ -491,6 +542,38 @@ public class GestureController{
 		//Get Joint Positions in converted format
 		PVector JointOneReal = getRealCoordinites(context,user, c.J.First);
 		PVector JointTwoReal = getRealCoordinites(context,user, c.J.Second);
+
+		//compare two points
+		PVector rel = compareJointPositions(JointOneReal, JointTwoReal);
+		
+		//if (debug) System.out.println("C: "+x+" "+y+" "+z);
+		
+		//If c.X is not null and the x relationship is incorrect the gesture fails 
+		if (c.X !=null && comp(rel.x, c.X) != 0){
+			return false;
+		}
+		//If c.Y is not null and the y relationship is wrong the gesture fails 
+		if (c.Y != null && comp(rel.y, c.Y) != 0){
+			return false;
+		}
+		//If c.Z is not null and the z relationship is incorrect the gesture fails 
+		if (c.Z != null && comp(rel.z,  c.Z) != 0){
+			return false;
+		}
+		//it did not fail thus it passed
+		return true;
+	}
+	private Boolean constMatch(P c, JointRecorder context, int tick){
+
+		//if not tracking user then that user auto fails
+		if (tick < 0 || tick >= context.getTicks()){
+			step = 0;
+			return false;
+		}
+		
+		//Get Joint Positions in converted format
+		PVector JointOneReal = context.getJoint(tick, c.J.First);
+		PVector JointTwoReal = context.getJoint(tick, c.J.Second);
 
 		//compare two points
 		PVector rel = compareJointPositions(JointOneReal, JointTwoReal);
@@ -652,6 +735,35 @@ public class GestureController{
 		step = 0; //reset gesture
 		return false;
 	} 
+	private Boolean next(JointRecorder context, int tick){
+		//Get Joint Positions in converted format
+		PVector JointOneReal = context.getJoint(tick, sequence.get(step).J.First);
+		PVector JointTwoReal = context.getJoint(tick, sequence.get(step).J.Second);
+
+		//compare each joint locations at each axis
+		PVector rel = compareJointPositions(JointOneReal, JointTwoReal);
+		
+		//IF stepMach() Position is exactly what is expected
+		if (stepMatch(rel)){
+			//if (debug) System.out.println("step "+step+" good");
+			step ++; //Increment Gesture
+			return true;
+		}
+
+		//IF midMatch() Position is not quite right but not wrong yet either
+		if (midMatch(rel)){
+			// if (debug) System.out.println("holding pattern on step "+step);
+			//  step = step; //maintain position
+			return null;
+		}
+
+		//Position has nothing to do with what was expected
+		//Gesture Failed 
+		
+		//   if (debug) System.out.println("step "+step+" failed");
+		step = 0; //reset gesture
+		return false;
+	}
 	/**
 	 * Converts a gesture into only discreetly detectable steps, to be used after increasing
 	 * Epsilon. 
@@ -723,11 +835,6 @@ public class GestureController{
 		
 		if (comp(current.X,alpha.X)==0 && comp(current.Y, alpha.Y)==0 
 				&& comp(current.Z, alpha.Z)==0){
-			//TODO figure out how to do this
-			//Options:
-			//1 - remove all points except first
-			//2 - average points that conflict
-			//*3 - average then use that as a focus point for the next pass to average again*
 			List<P> l = reduce(current.prev,alpha,visited);
 			if (l==null)
 				l = new ArrayList<P>();
