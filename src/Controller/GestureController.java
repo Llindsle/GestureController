@@ -1,5 +1,7 @@
 package controller;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 import processing.core.PVector;
@@ -33,7 +35,7 @@ public class GestureController{
 	@SuppressWarnings("unused")
 	private boolean debug = false;
 	
-	final String classTag = "gesture";
+	final private String classTag = "gesture";
 	
 	/**
 	 * Class to hold various information about joins and relation to each other
@@ -43,7 +45,7 @@ public class GestureController{
 	 *
 	 */
 	class P{
-		final String classTag = "p";
+		final private String classTag = "p";
 		
 		/**J Pair of SimpleOpenNI joints */
 		JointPair J;
@@ -63,6 +65,12 @@ public class GestureController{
 		/**Set to the previous appearance of ( JointOne, JointTwo ) */
 		Integer prev; 
 		
+		P(){
+			J = null;
+			X = Y = Z = null;
+			C = null;
+			prev = -1;
+		}
 		/**
 		 * The constructor called by Gesturecontroller.addPoint();
 		 * @param J1 : SimpleOpenNI constant for a joint 
@@ -79,6 +87,7 @@ public class GestureController{
 			Y = y;
 			Z = z;
 			C = conn;
+			prev = null;
 		}
 		/**
 		 * Sets the previous value this is found after the JointOne and JointTwo are know
@@ -112,6 +121,13 @@ public class GestureController{
 		public boolean equalsCoordinates(P o){
 			return comp(this.X, o.X) == 0 && comp(this.Y, o.Y) == 0 && comp(this.Z, o.Z)==0;
 		}
+		public String toString(){
+			String ret = new String();
+			ret += "{"+J.toString();
+			ret += " < "+X+", "+Y+", "+Z+">";
+			ret += " C:"+C+" P:"+prev+"}";
+			return ret;
+		}
 		public String toXML(){
 			String content = new String();
 			content += "<"+classTag+">"+'\n';
@@ -135,7 +151,7 @@ public class GestureController{
 	 *
 	 */
 	class JointPair{
-		final String classTag = "j";
+		final private String classTag = "j";
 		/** First Joint in focus */
 		Integer First;
 		
@@ -262,7 +278,7 @@ public class GestureController{
 		
 		//Find the last appearance of the given joint pair in the sequence array
 		for(int i=sequence.size()-1;i>=0;i--){
-			if (debug) System.out.println(tmp.J.toString()+sequence.get(i).J.toString());
+//			if (debug) System.out.println(tmp.J.toString()+sequence.get(i).J.toString());
 			if (tmp.equalJoints(sequence.get(i))){
 					loc = i;
 					break;
@@ -360,6 +376,7 @@ public class GestureController{
 				step = 0; //reset gesture
 			}
 		}
+		
 		//The gesture was not finished return false
 		return false;
 	}
@@ -639,27 +656,94 @@ public class GestureController{
 	 * Converts a gesture into only discreetly detectable steps, to be used after increasing
 	 * Epsilon. 
 	 * 
-	 * Current implementation is horrible so I commented it out, it destroys concurrent
-	 * links creates new ones and is just a generally horrible way to do this.
+	 * Still has issues with concurrent pieces but it is getting better
 	 * 
 	 */
-	public void simplifyGesture(){
-		//TODO Fix this function
-		/*
-		GestureRecord log = new GestureRecord();
-		for (P target : sequence){
-			log.addFocusJoints(target.J.First, target.J.Second);
-			log.addNode(new JointPair(target.J.First, target.J.Second),
-					new PVector(target.X, target.Y, target.Z));
+	protected void simplifyGesture(){
+		boolean reduced[] = new boolean[sequence.size()];
+		List<List<P>> compress = new ArrayList<List<P>>();
+		for (int i = sequence.size()-1;i>=0;i--){
+			if(!reduced[i])
+				compress.add(reduce(i,null,reduced));
 		}
-		GestureController gen = log.generateGesture();
-		sequence = gen.sequence;
-		step = 0;
-		*/
+		/* Basic average of all equal points.
+		 * 
+		 * Upholds concurrency by equating if there is a terminating
+		 * concurrent condition then the average will be a terminating
+		 * condition.
+		 * 
+		 * May want to move the average function into P class.
+		 */
+		Vector<P> average = new Vector<P>();
+		P sum;
+		for (List<P> l : compress){
+			sum = new P();
+			sum.J = new JointPair(l.get(0).J.First, l.get(0).J.Second);
+			sum.C = false;
+			for (P p : l){
+				sum.X += p.X;
+				sum.Y += p.Y;
+				sum.Z += p.Z;
+				sum.C = sum.C&p.C; //any false will propagate from here
+			}
+			sum.X /=l.size();
+			sum.Y /=l.size();
+			sum.Z /=l.size();
+			average.add(sum);
+		}
+		
+		//TODO run average against original using average points as the alpha points
+		//for reduce()
+		
+		sequence = average;
+	}
+
+	private List<P> reduce(int i,P alpha, boolean visited[]){
+		if (visited[i])
+			return null;
+		visited[i] = true;
+		
+		P current = sequence.get(i);
+		
+		//hit the last element in the sequence
+		if (current.prev==null || current.prev == -1){
+			List<P> l = new ArrayList<P>();
+			l.add(current);
+			return l;
+		}
+		
+		//first element in sequence
+		if (alpha == null){
+			List<P> l = reduce(current.prev,alpha,visited);
+			if (l==null)
+				l = new ArrayList<P>();
+			l.add(current);
+			return l;
+		}
+		
+		if (comp(current.X,alpha.X)==0 && comp(current.Y, alpha.Y)==0 
+				&& comp(current.Z, alpha.Z)==0){
+			//TODO figure out how to do this
+			//Options:
+			//1 - remove all points except first
+			//2 - average points that conflict
+			//*3 - average then use that as a focus point for the next pass to average again*
+			List<P> l = reduce(current.prev,alpha,visited);
+			if (l==null)
+				l = new ArrayList<P>();
+			l.add(current);
+			return l;
+			
+		}
+		else{
+			//Unvisit so the driver can start a new node here
+			visited[i] = false;
+			return null;
+		}
 	}
 	/**
-	 * Modifies Epsilon by e, a positive e will make position detection less sensitive and a negative e
-	 * will make detection more sensitive.
+	 * Modifies Epsilon by e, a positive e will make position detection less 
+	 * sensitive and a negative e will make detection more sensitive.
 	 * 
 	 * Epsilon is bounded below by 0 and above by 90 (0<=Epsilon<=90)
 	 * 
