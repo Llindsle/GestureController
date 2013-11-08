@@ -1,6 +1,10 @@
 package controller;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.Vector;
 
 import controller.GestureController.JointPair;
@@ -258,7 +262,7 @@ public class GestureRecord{
 	 * 		True if there is a focus pair f to add t into the recording of.
 	 */
 	boolean addNode(JointPair f, PVector t){
-		//TODO Make this less able to break things if misused
+		//TODO Make this less able to break things
 		int index = Focus.indexOf(f);
 		if (index == -1)
 			return false;
@@ -266,6 +270,31 @@ public class GestureRecord{
 		recorder.get(index).add(t);
 		
 		return true;
+	}
+	/**
+	 * Creates and returns a copy of focus
+	 * @return
+	 * 		Copy of Focus
+	 */
+	public Vector<JointPair> getFocus(){
+		Vector<JointPair> v = new Vector<JointPair>();
+		for (JointPair j : Focus){
+			v.add(masterControl.new JointPair(j.First, j.Second));
+		}
+		return v;
+	}
+	/**
+	 * Creates and returns a set of all unique joints in focus
+	 * @return
+	 * 		Set of joints in focus
+	 */
+	public Set<Integer> getFocusSet(){
+		Set<Integer> s = new TreeSet<Integer>();
+		for (JointPair j : Focus){
+			s.add(j.First);
+			s.add(j.Second);
+		}
+		return s;
 	}
 	/**
 	 * Clear all recorded, data focus pairs are preserved.
@@ -308,6 +337,18 @@ public class GestureRecord{
 			ret += " }"+nl;
 		}
 		return ret;
+	}
+	/**
+	 * Returns the xml representation of the gesture that this recording
+	 * parses into without compression.
+	 * @return
+	 * 		xml representation of this
+	 * @see #generateGesture(boolean)
+	 * @see GestureController#toXML()
+	 */
+	public String toXML(){
+		GestureController gC = generateGesture(false);
+		return gC.toXML();
 	}
 	/**
 	 * Returns true if there is no recorded data. Will return true if there is focus pairs but

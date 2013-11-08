@@ -1,5 +1,8 @@
 package controller;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -30,7 +33,7 @@ import SimpleOpenNI.*;
  * @author Levi Lindsley
  *
  */
-public class GestureController{
+public class GestureController implements xmlGestureParser<GestureController>{
 	/** Used only to toggle debug output */
 	@SuppressWarnings("unused")
 	private boolean debug = false;
@@ -132,11 +135,11 @@ public class GestureController{
 			String content = new String();
 			content += "<"+classTag+">"+'\n';
 			content += J.toXML();
-			content += xmlGestureParser.createElement("x", X.toString());
-			content += xmlGestureParser.createElement("y", Y.toString());
-			content += xmlGestureParser.createElement("z", Z.toString());
-			content += xmlGestureParser.createElement("c", C.toString());
-			content += xmlGestureParser.createElement("prev", prev.toString());
+			content += xmlStatics.createElement("x", X.toString());
+			content += xmlStatics.createElement("y", Y.toString());
+			content += xmlStatics.createElement("z", Z.toString());
+			content += xmlStatics.createElement("c", C.toString());
+			content += xmlStatics.createElement("prev", prev.toString());
 			content +="</"+classTag+">"+'\n';
 			return content;
 		}
@@ -201,8 +204,8 @@ public class GestureController{
 		public String toXML(){
 			String context = new String();
 			context +="<"+classTag+">"+'\n';
-			context += xmlGestureParser.createElement("first", First.toString());
-			context += xmlGestureParser.createElement("second", Second.toString());
+			context += xmlStatics.createElement("first", First.toString());
+			context += xmlStatics.createElement("second", Second.toString());
 			context +="</"+classTag+">"+'\n';
 			return context;
 		}
@@ -574,6 +577,10 @@ public class GestureController{
 		//Get Joint Positions in converted format
 		PVector JointOneReal = context.getJoint(tick, c.J.First);
 		PVector JointTwoReal = context.getJoint(tick, c.J.Second);
+		
+		if (JointOneReal == null || JointTwoReal == null){
+			return false;
+		}
 
 		//compare two points
 		PVector rel = compareJointPositions(JointOneReal, JointTwoReal);
@@ -740,6 +747,9 @@ public class GestureController{
 		PVector JointOneReal = context.getJoint(tick, sequence.get(step).J.First);
 		PVector JointTwoReal = context.getJoint(tick, sequence.get(step).J.Second);
 
+		if (JointOneReal == null || JointTwoReal == null){
+			return false;
+		}
 		//compare each joint locations at each axis
 		PVector rel = compareJointPositions(JointOneReal, JointTwoReal);
 		
@@ -877,12 +887,59 @@ public class GestureController{
 		return Epsilon;
 	}
 
+	public void save(String fileName, List<GestureController> g){
+		BufferedWriter wr;
+		try {
+			wr = new BufferedWriter(new FileWriter(fileName));
+		} catch (IOException e) {
+			System.out.println("IOException: "+e.getMessage());
+			e.printStackTrace();
+			return;
+		}
+		String content = new String();
+		
+		content +="<?xml version=\"1.0\"?>"+'\n';
+		content +="<root>"+'\n';
+		content += xmlStatics.createElement("epsilon",GestureController.getTolerance().toString());
+		xmlGestureParser.xmlStatics.write(wr,content);
+		
+		for(GestureController c : g){
+			xmlStatics.write(wr,c.toXML());
+		}
+		
+		xmlStatics.write(wr,"</root>");
+
+	}
+	public void save(String fileName){
+		BufferedWriter wr;
+		try {
+			wr = new BufferedWriter(new FileWriter(fileName));
+		} catch (IOException e) {
+			System.out.println("IOException: "+e.getMessage());
+			e.printStackTrace();
+			return;
+		}
+		
+		String content = new String();
+		
+		content +="<?xml version=\"1.0\"?>"+'\n';
+		content +="<root>"+'\n';
+		content +="<epsilon>"+GestureController.getTolerance()+"</epsilon>";
+		content += toXML();
+		content +="</root>"; 
+		xmlStatics.write(wr,content);
+	}
+	/**
+	 * Returns xml Representation of a gesture.
+	 * @return
+	 * 	String in xml format representative of this
+	 */
 	public String toXML(){
 
 		
 		String content = new String();
 		content +="<"+classTag+">"+'\n';
-		content += xmlGestureParser.createElement("name", Name);
+		content += xmlStatics.createElement("name", Name);
 		
 		content +="<sequence>"+'\n';
 		for (P e : sequence){

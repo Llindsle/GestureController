@@ -1,5 +1,8 @@
 package controller;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -7,8 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
-import controller.GestureController.P;
 
 import processing.core.PVector;
 
@@ -24,7 +25,7 @@ import SimpleOpenNI.SimpleOpenNI;
  * @author Levi Lindsley
  *
  */
-public class JointRecorder {
+public class JointRecorder implements xmlGestureParser{
 	/**Used only to print debug output*/
 	@SuppressWarnings("unused")
 	private boolean debug = true;
@@ -352,6 +353,24 @@ public class JointRecorder {
 			ret += m.toString()+'\n';
 		}
 		return ret;
+	}
+	public static void save(String fileName,  JointRecorder jR){
+		BufferedWriter wr;
+		try {
+			wr = new BufferedWriter(new FileWriter(fileName));
+		} catch (IOException e) {
+			System.out.println("IOException: "+e.getMessage());
+			e.printStackTrace();
+			return;
+		}
+		String content = new String();
+		
+		content +="<?xml version=\"1.0\"?>"+'\n';
+		content +="<root>"+'\n';
+		content +=jR.toXML();
+		content +="</root>"+'\n';
+		write(wr, content);
+		
 	}
 	public String toXML(){
 		String context = new String();
