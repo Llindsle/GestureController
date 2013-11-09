@@ -86,13 +86,10 @@ class JointRelation{
 	 * 		this.X == o.X && this.Y == o.Y && this.Z == o.Z +- Epsion.
 	 */
 	public boolean equalsCoordinates(JointRelation o){
-		boolean equal = false;
-		if (!(this.X == null))
-			equal = GestureController.comp(this.X, o.X) == 0;
-		if (!(this.Y == null))
-			equal  = equal && GestureController.comp(this.Y, o.Y) == 0;
-		if (!(this.Z == null))
-			equal = equal && GestureController.comp(this.Z, o.Z) ==0;
+		boolean equal;
+		equal = GestureController.comp(this.X, o.X) == 0;
+		equal  = equal && (GestureController.comp(this.Y, o.Y) == 0);
+		equal = equal && (GestureController.comp(this.Z, o.Z) ==0);
 		return equal;
 	}
 	public boolean boundedBy(JointRelation lb, JointRelation ub){

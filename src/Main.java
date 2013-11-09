@@ -219,18 +219,28 @@ public class Main extends PApplet{
 				}
 				else{
 					log.record(jR);
-					GestureController g = log.generateGesture(CompressionType.NONE);
-//					log.clear(); 
+					GestureController g = log.generateGesture(CompressionType.SIMPLE);
+					log.clear();
 					gesture.add(g);
-//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
 					System.out.println(g);
 					System.out.println("Gesture "+gesture.size()+" generated");
-					//gesture.add(g2);
-					log.resetRecording();
+					
+					log.record(jR);
+					g = log.generateGesture(CompressionType.AVG);
+					gesture.add(g);
+					log.clear();
 					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-					//System.out.println(g2);
+					System.out.println(g);
 					System.out.println("Gesture "+gesture.size()+" generated");
-					log.resetRecording();
+					
+					log.record(jR);
+					g = log.generateGesture(CompressionType.DBL_AVG);
+					gesture.add(g);
+					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+					System.out.println(g);
+					System.out.println("Gesture "+gesture.size()+" generated");
+					
 					jR.clear();
 				}
 			}

@@ -37,7 +37,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	public enum CompressionType{NONE, SIMPLE, AVG, DBL_AVG};
 	/** Used only to toggle debug output */
 	@SuppressWarnings("unused")
-	private boolean debug = false;
+	private boolean debug = true;
 	
 	final private String classTag = "gesture";
 	
@@ -93,6 +93,16 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		step = 0;
 	}
 	public void add(JointRelation j){
+		//Find the last appearance of the given joint pair in the sequence array
+		int loc = -1;
+		for(int i=sequence.size()-1;i>=0;i--){
+//			if (debug) System.out.println(tmp.J.toString()+sequence.get(i).J.toString());
+			if (j.equalJoints(sequence.get(i))){
+					loc = i;
+					break;
+			}
+		}
+		j.setPrev(loc); //set the previous location to the one found or -1 if not found
 		sequence.add(j);
 	}
 	/**
@@ -647,6 +657,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				compress.add(reduce(i,null,reduced));
 			}
 		}
+		if (debug) System.out.println("nodes: "+compress.size());
 		if (type == CompressionType.SIMPLE){
 			Vector<JointRelation> simple = new Vector<JointRelation>();
 			for (List<JointRelation> l : compress){
@@ -658,18 +669,86 @@ public class GestureController implements xmlGestureParser<GestureController>{
 					p --;
 				}
 				head.setPrev(p);
-				simple.add(l.get(0));
+				simple.add(head);
 			}
 			sequence = simple;
 			return;
 		}
+		Vector<JointRelation> average = averageReduction(compress);
+		
+		if (type == CompressionType.DBL_AVG){
+			int i=0;
+			reduced = new boolean [size()];
+			compress.clear();
+			for (int j=sequence.size()-1;j>=0;j--){
+				JointRelation r = average.get(i);
+				if (!reduced[j]){
+					List<JointRelation> l = reduce(j,r,reduced);
+					if (l != null)
+						compress.add(l);
+					i++;
+					if (i==average.size())
+						break;
+				}
+				if (i== average.size())
+					break;
+			}
+			average = averageReduction(compress);
+		}
+		
+		sequence = average;
+
+	}
+
+	private List<JointRelation> reduce(int i,JointRelation alpha, boolean visited[]){
+		if (debug) System.out.print(i+" ");
+		if (visited[i])
+			return null;
+		visited[i] = true;
+		
+		JointRelation current = sequence.get(i);
+		List<JointRelation> l;
+		
+//		//hit the last element in the sequence
+//		if (current.prev==null || current.prev == -1){
+//			l = new ArrayList<JointRelation>();
+//			l.add(current);
+//			return l;
+//		}
+		
+		//first element in sequence
+		if (alpha == null){
+			l = reduce(current.prev,current,visited);
+		}
+		
+		else if (current.equalsCoordinates(alpha)){
+			//hit the last element in the sequence
+			if (current.prev==null || current.prev == -1){
+				l = new ArrayList<JointRelation>();
+				l.add(current);
+				return l;
+			}
+			l = reduce(current.prev,alpha,visited);			
+		}
+		else{
+			if (debug) System.out.print("unvisit");
+			//Unvisit so the driver can start a new node here
+			visited[i] = false;
+			return null;
+		}
+		if (l==null)
+			l = new ArrayList<JointRelation>();
+		l.add(current);
+		return l;
+	}
+	private Vector<JointRelation> averageReduction(List<List<JointRelation>> compress){
+
 		/* Basic average of all equal points.
 		 * 
 		 * Upholds concurrency by equating if there is a terminating
 		 * concurrent condition then the average will be a terminating
 		 * condition.
 		 * 
-		 * May want to move the average function into P class.
 		 */
 		Vector<JointRelation> average = new Vector<JointRelation>();
 		JointRelation sum;
@@ -699,66 +778,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			sum.setPrev(prev);
 			average.add(sum);
 		}
-		if (type == CompressionType.DBL_AVG){
-			/*TODO run average against original using average points as the alpha points
-			 *for reduce()
-			 */
-			int i=size()-1;
-			reduced = new boolean [size()];
-			for (JointRelation j : average){
-				while (!reduced[i]){
-					reduce(i,j,reduced);
-					i--;
-					if (i<0)
-						break;
-				}
-				if (i<0)
-					break;
-			}
-		}
-		else{
-			sequence = average;
-		}
-	}
-
-	private List<JointRelation> reduce(int i,JointRelation alpha, boolean visited[]){
-		if (debug) System.out.print(i+" ");
-		if (visited[i])
-			return null;
-		visited[i] = true;
-		
-		JointRelation current = sequence.get(i);
-		
-		//hit the last element in the sequence
-		if (current.prev==null || current.prev == -1){
-			List<JointRelation> l = new ArrayList<JointRelation>();
-			l.add(current);
-			return l;
-		}
-		
-		//first element in sequence
-		if (alpha == null){
-			List<JointRelation> l = reduce(current.prev,current,visited);
-			if (l==null)
-				l = new ArrayList<JointRelation>();
-			l.add(current);
-			return l;
-		}
-		
-		if (current.equalsCoordinates(alpha)){
-			List<JointRelation> l = reduce(current.prev,alpha,visited);
-			if (l==null)
-				l = new ArrayList<JointRelation>();
-			l.add(current);
-			return l;
-			
-		}
-		else{
-			if (debug) System.out.print("unvisit");
-			//Unvisit so the driver can start a new node here
-			visited[i] = false;
-			return null;
-		}
+		return average;
 	}
 	/**
 	 * Modifies Epsilon by e, a positive e will make position detection less 

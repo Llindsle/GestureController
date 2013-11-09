@@ -233,7 +233,7 @@ public class GestureRecord extends GestureController{
 		
 		if (type != CompressionType.NONE){
 			int oldNodes = super.size();
-			System.out.println("Compressing Recording");
+			System.out.println("Compressing Recording using CompressionType."+type);
 			super.simplifyGesture(type);
 			System.out.println("Record Compressed from "+oldNodes+" to "+super.size());
 		}
@@ -316,7 +316,7 @@ public class GestureRecord extends GestureController{
 	/**
 	 * Clear all recorded, data focus pairs are preserved.
 	 */
-	public void resetRecording(){
+	public void clear(){
 		super.clear();
 	}
 	/**
