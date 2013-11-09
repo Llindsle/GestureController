@@ -92,11 +92,13 @@ public class GestureRecord extends GestureController{
 				return;
 			
 			//compare joints and get relative position
-			PVector Relative = super.compareJointPositions(jointOne, jointTwo);
+			JointRelation relative = super.compareJointPositions(jP,jointOne, jointTwo);
 			
 			boolean conn = (i<Focus.size()-1);
+			relative.C = conn;
 			//add relative coordinates to proper joint pair record vector
-			super.addPoint(jP.First,jP.Second, (int)Relative.x, (int)Relative.y,(int) Relative.z, conn);
+			super.add(relative);
+			//super.addPoint(jP.First,jP.Second, (int)Relative.x, (int)Relative.y,(int) Relative.z, conn);
 			//recorder.get(i).add(Relative);
 			i++;
 		}
@@ -136,11 +138,13 @@ public class GestureRecord extends GestureController{
 				PVector jointTwo = log.getJoint(i, jP.Second);
 				
 				//Calculate relation between the joints
-				PVector relative = super.compareJointPositions(jointOne, jointTwo);
+				JointRelation relative = super.compareJointPositions(jP,jointOne, jointTwo);
 				
 				//Add to the recorder
 				boolean conn = (j<Focus.size()-1);
-				super.addPoint(jP.First,jP.Second, (int)relative.x, (int)relative.y,(int) relative.z, conn);
+				relative.C = conn;
+				super.add(relative);
+			//	super.addPoint(jP.First,jP.Second, (int)relative.x, (int)relative.y,(int) relative.z, conn);
 				//itter.next().add(relative);
 				j++;
 			}
@@ -156,9 +160,9 @@ public class GestureRecord extends GestureController{
 	/**
 	 * Removes all duplicate recorded joint comparisons that appear in sequence keeping only the head
 	 * of the sequence in R.
+	 * @deprecated
 	 */
 	private void compressRecording(){
-		super.simplifyGesture();
 		/* Redacted
 		int i=0; //index counter
 
@@ -220,20 +224,23 @@ public class GestureRecord extends GestureController{
 	 * @return
 	 * 		GestureController representing the recorded gesture
 	 */
-	public GestureController generateGesture(boolean compress){
+	public GestureController generateGesture(CompressionType type){
 		//makes sure that something is recored
 		if (isEmpty()){
 			System.out.println("NO recorded data operation terminated.");
 			return null;
 		}
 		
-		if (compress){
+		if (type != CompressionType.NONE){
 			int oldNodes = super.size();
 			System.out.println("Compressing Recording");
-			compressRecording();
+			super.simplifyGesture(type);
 			System.out.println("Record Compressed from "+oldNodes+" to "+super.size());
 		}
-		return (GestureController)this; //downcast
+		
+		GestureController out = super.clone(); 
+		if (debug) System.out.println(out.size());
+		return out; 
 		/*
 		//new gestureController to return
 		GestureController control = new GestureController();
@@ -274,7 +281,6 @@ public class GestureRecord extends GestureController{
 	 */
 	/*Redacted
 	boolean addNode(JointPair f, PVector t){
-		//TODO Make this less able to break things
 		int index = Focus.indexOf(f);
 		if (index == -1)
 			return false;
@@ -329,29 +335,12 @@ public class GestureRecord extends GestureController{
 			ret += "No Recorded Data"+nl;
 			return ret;
 		}
-		ret += "Number of recorded steps: "+super.size()+nl;
-
-		int i=0;
-		ret +=i+": ";
-		for(JointRelation jR : this){
-			ret += jR.toString()+", ";
-			if (!jR.C){
-				i++;
-				ret += '\n'+i+": ";
-			}
+		ret += "Focus Pairs: "+Focus.size();
+		for (JointPair j : Focus){
+			ret += j.toString()+'\n';
 		}
-		/*
-		//Show all focus pairs on a line and display each step on a new line
-		for (int i=0;i<recorder.firstElement().size();i++){
-			ret += i+": { ";
-			for (int j=0;j<recorder.size();j++){
-				F = Focus.get(j);
-				V = recorder.get(j).get(i);
-				ret += F.First+" "+F.Second+" ["+V.x+", "+V.y+", "+V.z+"] ";
-			}
-			ret += " }"+nl;
-		}
-		*/
+		ret += super.toString();
+		
 		return ret;
 	}
 	/**
@@ -363,7 +352,7 @@ public class GestureRecord extends GestureController{
 	 * @see GestureController#toXML()
 	 */
 	public String toXML(){
-		GestureController gC = generateGesture(false);
+		GestureController gC = generateGesture(CompressionType.NONE);
 		return gC.toXML();
 	}
 }

@@ -4,7 +4,6 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
@@ -34,9 +33,8 @@ import SimpleOpenNI.*;
  * @author Levi Lindsley
  *
  */
-public class GestureController implements xmlGestureParser<GestureController>, 
-  Iterable<JointRelation>{
-	
+public class GestureController implements xmlGestureParser<GestureController>{
+	public enum CompressionType{NONE, SIMPLE, AVG, DBL_AVG};
 	/** Used only to toggle debug output */
 	@SuppressWarnings("unused")
 	private boolean debug = false;
@@ -94,6 +92,9 @@ public class GestureController implements xmlGestureParser<GestureController>,
 		//constants = new Vector<P>();
 		step = 0;
 	}
+	public void add(JointRelation j){
+		sequence.add(j);
+	}
 	/**
 	 * Adds a joint relationship to the sequence array.
 	 * @param J1 : SimpleOpenNI constant for a joint
@@ -141,8 +142,8 @@ public class GestureController implements xmlGestureParser<GestureController>,
 //		//If all axes are being ignored the constraint is null ignore it
 //		if(x==null && y == null && z==null) return;
 //		
-//		/*TODO Check all previous constraints and make sure that this constraint does not
-//		 *contradict with any of the previous constraints
+//		/* Check all previous constraints and make sure that this constraint does not
+//		 * contradict with any of the previous constraints
 //		 */
 //		
 //		constants.add(new P(J1,J2, x,y,z,false));
@@ -187,6 +188,7 @@ public class GestureController implements xmlGestureParser<GestureController>,
 		 * concurrent gestures
 		 */
 		while (step > 0 && step < sequence.size() &&sequence.get(step-1).C){
+			if (debug) System.out.print("con");
 			//Some part of the gesture failed, reset the entire gesture
 			if (N == false){
 				step = 0; //Reset gesture
@@ -337,7 +339,7 @@ public class GestureController implements xmlGestureParser<GestureController>,
 	 * 			y: angle created on y-z plane
 	 * 			z: angle created on x-y plane
 	 */
-	protected static PVector compareJointPositions(PVector jointOne, PVector jointTwo) {
+	protected static JointRelation compareJointPositions(JointPair n, PVector jointOne, PVector jointTwo) {
 		
 //		int x = comp(jointOne.x, jointTwo.x);
 //		int y = comp(jointOne.y, jointTwo.y);
@@ -351,8 +353,11 @@ public class GestureController implements xmlGestureParser<GestureController>,
 		
 		//Calculate angle on X-Y plane
 		int angleZ = angle(jointOne.x, jointOne.y, jointTwo.x, jointTwo.y);
-		
-		return new PVector(angleX, angleY, angleZ);
+		if (n == null){
+			return new JointRelation(0,0,angleX, angleY, angleZ, false);
+		}
+		return new JointRelation(n.First,n.Second,angleX, angleY, angleZ,false);
+		//return new PVector(angleX, angleY, angleZ);
 		//return new PVector(x,y,z);
 	}
 	/**
@@ -391,24 +396,24 @@ public class GestureController implements xmlGestureParser<GestureController>,
 		PVector JointTwoReal = getRealCoordinites(context,user, c.J.Second);
 
 		//compare two points
-		PVector rel = compareJointPositions(JointOneReal, JointTwoReal);
+		JointRelation rel = compareJointPositions(c.J,JointOneReal, JointTwoReal);
 		
 		//if (debug) System.out.println("C: "+x+" "+y+" "+z);
 		
-		//If c.X is not null and the x relationship is incorrect the gesture fails 
-		if (c.X !=null && comp(rel.x, c.X) != 0){
-			return false;
-		}
-		//If c.Y is not null and the y relationship is wrong the gesture fails 
-		if (c.Y != null && comp(rel.y, c.Y) != 0){
-			return false;
-		}
-		//If c.Z is not null and the z relationship is incorrect the gesture fails 
-		if (c.Z != null && comp(rel.z,  c.Z) != 0){
-			return false;
-		}
+//		//If c.X is not null and the x relationship is incorrect the gesture fails 
+//		if (c.X !=null && comp(rel.x, c.X) != 0){
+//			return false;
+//		}
+//		//If c.Y is not null and the y relationship is wrong the gesture fails 
+//		if (c.Y != null && comp(rel.y, c.Y) != 0){
+//			return false;
+//		}
+//		//If c.Z is not null and the z relationship is incorrect the gesture fails 
+//		if (c.Z != null && comp(rel.z,  c.Z) != 0){
+//			return false;
+//		}
 		//it did not fail thus it passed
-		return true;
+		return c.equalsCoordinates(rel);
 	}
 	/**
 	 * @deprecated
@@ -433,24 +438,24 @@ public class GestureController implements xmlGestureParser<GestureController>,
 		}
 
 		//compare two points
-		PVector rel = compareJointPositions(JointOneReal, JointTwoReal);
+		JointRelation rel = compareJointPositions(c.J,JointOneReal, JointTwoReal);
 		
 		//if (debug) System.out.println("C: "+x+" "+y+" "+z);
 		
-		//If c.X is not null and the x relationship is incorrect the gesture fails 
-		if (c.X !=null && comp(rel.x, c.X) != 0){
-			return false;
-		}
-		//If c.Y is not null and the y relationship is wrong the gesture fails 
-		if (c.Y != null && comp(rel.y, c.Y) != 0){
-			return false;
-		}
-		//If c.Z is not null and the z relationship is incorrect the gesture fails 
-		if (c.Z != null && comp(rel.z,  c.Z) != 0){
-			return false;
-		}
+//		//If c.X is not null and the x relationship is incorrect the gesture fails 
+//		if (c.X !=null && comp(rel.x, c.X) != 0){
+//			return false;
+//		}
+//		//If c.Y is not null and the y relationship is wrong the gesture fails 
+//		if (c.Y != null && comp(rel.y, c.Y) != 0){
+//			return false;
+//		}
+//		//If c.Z is not null and the z relationship is incorrect the gesture fails 
+//		if (c.Z != null && comp(rel.z,  c.Z) != 0){
+//			return false;
+//		}
 		//it did not fail thus it passed
-		return true;
+		return c.equalsCoordinates(rel);
 	}
 	/**
 	 * Check if the current step matches the relationship given by x,y,z perfectly 
@@ -460,12 +465,10 @@ public class GestureController implements xmlGestureParser<GestureController>,
 	 * 		True if the V.x,V.y,and V.z all match the respective relationship given by the current
 	 * step in the sequence
 	 */
-	private boolean stepMatch(PVector V){
+	private boolean stepMatch(JointRelation V){
 		JointRelation target = sequence.get(step); //get current step
-		//check for x,y,and z matches againts target
-		if (comp(V.x, target.X) ==0 && comp(V.y, target.Y)==0 && comp(V.z, target.Z)==0)
-			return true; //match was good
-		return false; // match failed
+		//check for x,y,and z matches against target
+		return target.equalsCoordinates(V);
 	}
 	/**
 	 * Checks to see if the given x,y,z relationships fall between the relationships given by
@@ -479,7 +482,7 @@ public class GestureController implements xmlGestureParser<GestureController>,
 	 * @return
 	 * 		True if the given relationships fall between the current and previous step.
 	 */
-	private boolean midMatch(PVector V){
+	private boolean midMatch(JointRelation V){
 		
 		JointRelation cur = sequence.get(step); //get current step
 		
@@ -492,7 +495,9 @@ public class GestureController implements xmlGestureParser<GestureController>,
 		JointRelation prev = sequence.get(cur.prev); //get previous of equal joint pair step as denoted by cur.prev
 
 		//check relation between all coordinates return true if all are within range else false
-		return (chkCoord(cur.X, V.x, prev.X) && chkCoord(cur.Y, V.y, prev.Y) && chkCoord(cur.Z, V.z, prev.Z));
+		return V.boundedBy(cur, prev);
+//		return (chkCoord(cur.X, V.X, prev.X) && chkCoord(cur.Y, V.Y, prev.Y) 
+//				&& chkCoord(cur.Z, V.Z, prev.Z));
 	}
 	/**
 	 * Checks if val is between cur and prev, the bounds do not need to be in any order thus
@@ -503,7 +508,8 @@ public class GestureController implements xmlGestureParser<GestureController>,
 	 * @return
 	 * 		True if val is between cur and prev 
 	 */
-	private boolean chkCoord(int cur, float val, int prev){
+	@SuppressWarnings("unused")
+	private boolean chkCoord(int cur, int val, int prev){
 		//if the current > previous then check them in (prev <= val <= cur) 
 		//else check (cur <= val <= prev) order
 		if (cur > prev){
@@ -565,7 +571,7 @@ public class GestureController implements xmlGestureParser<GestureController>,
 		PVector JointTwoReal = getRealCoordinites(context,user, sequence.get(step).J.Second);
 
 		//compare each joint locations at each axis
-		PVector rel = compareJointPositions(JointOneReal, JointTwoReal);
+		JointRelation rel = compareJointPositions(sequence.get(step).J,JointOneReal, JointTwoReal);
 		
 		//  if (debug) System.out.println(JointOneReal.x+" "+JointOneReal.y+" "+JointOneReal.z);
 		//  if (debug) System.out.println(x+" "+y+" "+z);
@@ -601,7 +607,7 @@ public class GestureController implements xmlGestureParser<GestureController>,
 			return false;
 		}
 		//compare each joint locations at each axis
-		PVector rel = compareJointPositions(JointOneReal, JointTwoReal);
+		JointRelation rel = compareJointPositions(sequence.get(step).J,JointOneReal, JointTwoReal);
 		
 		//IF stepMach() Position is exactly what is expected
 		if (stepMatch(rel)){
@@ -628,15 +634,34 @@ public class GestureController implements xmlGestureParser<GestureController>,
 	 * Converts a gesture into only discreetly detectable steps, to be used after increasing
 	 * Epsilon. 
 	 * 
-	 * Still has issues with concurrent pieces but it is getting better
+	 * There may be issues with concurrent pieces
 	 * 
 	 */
-	protected void simplifyGesture(){
+	protected void simplifyGesture(CompressionType type){
+		if (type == CompressionType.NONE) return;
+		
 		boolean reduced[] = new boolean[sequence.size()];
 		List<List<JointRelation>> compress = new ArrayList<List<JointRelation>>();
 		for (int i = sequence.size()-1;i>=0;i--){
-			if(!reduced[i])
+			if(!reduced[i]){
 				compress.add(reduce(i,null,reduced));
+			}
+		}
+		if (type == CompressionType.SIMPLE){
+			Vector<JointRelation> simple = new Vector<JointRelation>();
+			for (List<JointRelation> l : compress){
+				JointRelation head = l.get(0);
+				int p = simple.size()-1;
+				for (JointRelation j : simple){
+					if (head.equalJoints(j))
+						break;
+					p --;
+				}
+				head.setPrev(p);
+				simple.add(l.get(0));
+			}
+			sequence = simple;
+			return;
 		}
 		/* Basic average of all equal points.
 		 * 
@@ -649,6 +674,8 @@ public class GestureController implements xmlGestureParser<GestureController>,
 		Vector<JointRelation> average = new Vector<JointRelation>();
 		JointRelation sum;
 		for (List<JointRelation> l : compress){
+			if (l == null)
+				System.out.println("null");
 			sum = new JointRelation();
 			sum.J = new JointPair(l.get(0).J.First, l.get(0).J.Second);
 			sum.C = false;
@@ -661,17 +688,41 @@ public class GestureController implements xmlGestureParser<GestureController>,
 			sum.X /=l.size();
 			sum.Y /=l.size();
 			sum.Z /=l.size();
+
+			int prev = -1;
+			for (int i=average.size()-1;i>=0;i--){
+				if (average.get(i).equalJoints(sum)){
+					prev = i;
+					break;
+				}
+			}
+			sum.setPrev(prev);
 			average.add(sum);
 		}
-		
-		/*TODO run average against original using average points as the alpha points
-		 *for reduce()
-		 */
-		
-		sequence = average;
+		if (type == CompressionType.DBL_AVG){
+			/*TODO run average against original using average points as the alpha points
+			 *for reduce()
+			 */
+			int i=size()-1;
+			reduced = new boolean [size()];
+			for (JointRelation j : average){
+				while (!reduced[i]){
+					reduce(i,j,reduced);
+					i--;
+					if (i<0)
+						break;
+				}
+				if (i<0)
+					break;
+			}
+		}
+		else{
+			sequence = average;
+		}
 	}
 
 	private List<JointRelation> reduce(int i,JointRelation alpha, boolean visited[]){
+		if (debug) System.out.print(i+" ");
 		if (visited[i])
 			return null;
 		visited[i] = true;
@@ -687,15 +738,14 @@ public class GestureController implements xmlGestureParser<GestureController>,
 		
 		//first element in sequence
 		if (alpha == null){
-			List<JointRelation> l = reduce(current.prev,alpha,visited);
+			List<JointRelation> l = reduce(current.prev,current,visited);
 			if (l==null)
 				l = new ArrayList<JointRelation>();
 			l.add(current);
 			return l;
 		}
 		
-		if (comp(current.X,alpha.X)==0 && comp(current.Y, alpha.Y)==0 
-				&& comp(current.Z, alpha.Z)==0){
+		if (current.equalsCoordinates(alpha)){
 			List<JointRelation> l = reduce(current.prev,alpha,visited);
 			if (l==null)
 				l = new ArrayList<JointRelation>();
@@ -704,6 +754,7 @@ public class GestureController implements xmlGestureParser<GestureController>,
 			
 		}
 		else{
+			if (debug) System.out.print("unvisit");
 			//Unvisit so the driver can start a new node here
 			visited[i] = false;
 			return null;
@@ -742,6 +793,22 @@ public class GestureController implements xmlGestureParser<GestureController>,
 	}
 	public void clear(){
 		sequence.clear();
+	}
+	public String toString(){
+		String info = new String();
+		info += "Steps: "+size()+'\n';
+		info += "current step: "+step+'\n';
+		int i=0;
+		info +=i+": ";
+		for(JointRelation jR : sequence){
+			info += jR.toString()+" ";
+			if (!jR.C){
+				i++;
+				if (i<size())
+					info += '\n'+""+i+": ";
+			}
+		}
+		return info;
 	}
 	public void save(String fileName, List<GestureController> g){
 		BufferedWriter wr;
@@ -816,8 +883,14 @@ public class GestureController implements xmlGestureParser<GestureController>,
 	public boolean isEmpty() {
 		return sequence.isEmpty();
 	}
-	@Override
-	public Iterator<JointRelation> iterator() {
-		return sequence.iterator();
+//	@Override
+//	public Iterator<JointRelation> iterator() {
+//		return sequence.iterator();
+//	}
+	protected GestureController clone(){
+		GestureController o = new GestureController();
+		o.sequence.addAll(this.sequence);
+		o.step = 0;
+		return o;
 	}
 }

@@ -2,6 +2,7 @@ import java.util.List;
 import java.util.Vector;
 
 import controller.*;
+import controller.GestureController.CompressionType;
 
 import SimpleOpenNI.*;
 import processing.core.*;
@@ -21,23 +22,23 @@ public class Main extends PApplet{
 	JointRecorder jR;
 
 	public void setup()
-	{
+	{	
 	  context = new SimpleOpenNI(this);
 	  gesture = new Vector<GestureController>();
 	  log = new GestureRecord();
 	  jR = new JointRecorder();
-//	  jR.addJoint(SimpleOpenNI.SKEL_LEFT_ELBOW);
-//	  jR.addJoint(SimpleOpenNI.SKEL_LEFT_HAND);
+	  jR.addJoint(SimpleOpenNI.SKEL_LEFT_ELBOW);
+	  jR.addJoint(SimpleOpenNI.SKEL_LEFT_HAND);
 //	  jR.addJoint(SimpleOpenNI.SKEL_RIGHT_HAND);
 //	  jR.addJoint(SimpleOpenNI.SKEL_RIGHT_ELBOW);
-	  jR.addAll();
+//	  jR.addAll();
 	   
 	  gesture.add(new GestureController("Wave"));
 	  createWaveGesture(gesture.lastElement());
 	  
 	   
 	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND);
-	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
+//	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
 	  
 //	  gesture.add(new GestureController("Stir"));
 //	  createStirGesture(gesture.lastElement());
@@ -127,7 +128,7 @@ public class Main extends PApplet{
 	}
 	void togglePlayBack(){
 		playback = !playback;
-		System.out.println("Playback mode ");
+		System.out.print("Playback mode: ");
 		if(!playback){
 			jR.resetPlayBack();
 			System.out.print("dis-");
@@ -218,10 +219,16 @@ public class Main extends PApplet{
 				}
 				else{
 					log.record(jR);
-					
-					gesture.add(log.generateGesture(compression));
+					GestureController g = log.generateGesture(CompressionType.NONE);
+//					log.clear(); 
+					gesture.add(g);
+//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+					System.out.println(g);
+					System.out.println("Gesture "+gesture.size()+" generated");
+					//gesture.add(g2);
+					log.resetRecording();
 					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-					System.out.println(log);
+					//System.out.println(g2);
 					System.out.println("Gesture "+gesture.size()+" generated");
 					log.resetRecording();
 					jR.clear();
@@ -229,6 +236,9 @@ public class Main extends PApplet{
 			}
 		}
 		if (key == 's'){
+			if(!gesture.isEmpty()){
+				gesture.lastElement().save("Gesture.xml",gesture);
+			}
 			//xmlGestureParser.save("Gesture.xml", gesture);
 			//xmlGestureParser.save("Gesture.xml", jR);
 		}

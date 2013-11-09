@@ -28,12 +28,14 @@ class JointRelation{
 	Boolean C;
 	
 	/**Set to the previous appearance of ( JointOne, JointTwo ) */
-	Integer prev; 
+	Integer prev;
 	
 	JointRelation(){
 		J = null;
-		X = Y = Z = null;
-		C = null;
+		X = 0;
+		Y = 0;
+		Z = 0;
+		C = false;
 		prev = -1;
 	}
 	/**
@@ -84,10 +86,28 @@ class JointRelation{
 	 * 		this.X == o.X && this.Y == o.Y && this.Z == o.Z +- Epsion.
 	 */
 	public boolean equalsCoordinates(JointRelation o){
-		boolean equal = GestureController.comp(this.X, o.X) == 0;
-		equal  = equal && GestureController.comp(this.Y, o.Y) == 0;
-		equal = equal && GestureController.comp(this.Z, o.Z) ==0;
+		boolean equal = false;
+		if (!(this.X == null))
+			equal = GestureController.comp(this.X, o.X) == 0;
+		if (!(this.Y == null))
+			equal  = equal && GestureController.comp(this.Y, o.Y) == 0;
+		if (!(this.Z == null))
+			equal = equal && GestureController.comp(this.Z, o.Z) ==0;
 		return equal;
+	}
+	public boolean boundedBy(JointRelation lb, JointRelation ub){
+		boolean bound = chkBounds(lb.X, this.X, ub.X);
+		bound = bound && chkBounds(lb.Y, this.Y, ub.Y);
+		bound = bound && chkBounds(lb.Z, this.Z, ub.Z);
+		return bound;
+	}
+	public boolean chkBounds(int lb, int val, int ub){
+		if (lb < ub){
+			int tmp = lb;
+			lb = ub;
+			ub = tmp;
+		}
+		return lb <= val && val <= ub;
 	}
 	public String toString(){
 		String ret = new String();
