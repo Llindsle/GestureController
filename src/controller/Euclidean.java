@@ -1,5 +1,7 @@
 package controller;
 
+import java.util.Collection;
+
 import controller.xmlGestureParser.xmlStatics;
 
 /**
@@ -9,7 +11,7 @@ import controller.xmlGestureParser.xmlStatics;
  *
  */
 class Euclidean{
-	private static Double Epsilon = 0.25;
+	private static Double Epsilon = 0.05;
 	private static final String classTag = "Euclidean";
 	
 	static final Euclidean ZERO = new Euclidean (0.0,0.0,0.0);
@@ -83,6 +85,11 @@ class Euclidean{
 		this.y *= o.y;
 		this.z *= o.z;
 	}
+	void scale(Double s){
+		this.x *= s;
+		this.y *= s;
+		this.z *= s;
+	}
 	/**
 	 * translates coordinate of this by the coordinates of o
 	 * @param o
@@ -129,6 +136,18 @@ class Euclidean{
 	Double dotProduct(Euclidean o){
 		return (this.x*o.x)+(this.y*o.y)+(this.z*o.z);
 	}
+	Euclidean unitize(){
+		return new Euclidean(x.compareTo(0.0),y.compareTo(0.0),z.compareTo(0.0));
+	}
+	static Euclidean average(Collection<Euclidean> c){
+		Euclidean a = new Euclidean(0.0,0.0,0.0);
+		for (Euclidean e : c){
+			a.translate(e);
+		}
+		Double inv = 1.0/c.size();
+		a.scale(inv);
+		return a;
+	}
 	boolean isAbout(Euclidean o){
 		return (isAbout(this.x, o.x) && isAbout(this.y, o.y) && isAbout(this.z,o.z));
 	}
@@ -149,7 +168,20 @@ class Euclidean{
 		}
 		return (lb <= val && val <= ub);
 	}
-
+	public boolean equals(Object o){
+		if (o == null)
+			return false;
+		if (! (o instanceof Euclidean))
+			return false;
+		Euclidean other = (Euclidean)o;
+		return (x.equals(other.x)&&y.equals(other.y)&&z.equals(other.z));
+	}
+	public int hashCode(){
+		Long bits = Double.doubleToLongBits(x);
+		bits  = bits ^ Double.doubleToLongBits(y);
+		bits = bits ^ Double.doubleToLongBits(z);
+		return (int)(bits ^ (bits >>>32));
+	}
 	public String toString(){
 		return "<"+x+", "+y+", "+z+">";
 	}

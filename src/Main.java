@@ -102,16 +102,17 @@ public class Main extends PApplet{
 	  // draw depthImageMap
 	  image(context.depthImage(),0,0);
 	  
-	  if(playback){
-		  viewRecord();
-		  return;
-	  }
+
 	  // draw the skeleton if it's available
 	  int[] userList = context.getUsers();
 	  for(int i=0;i<userList.length;i++)
 	  {
 	    if(context.isTrackingSkeleton(userList[i])){
-	      drawSkeleton(userList[i]);
+	  	  if(playback){
+			  viewRecord();
+		  }
+	  	  else
+	  		  drawSkeleton(userList[i]);
 	      
 	      //check the gesture for completion
 	      for (int j=0;j<gesture.size();j++)
@@ -205,7 +206,7 @@ public class Main extends PApplet{
 			togglePlayBack();
 		}
 		if (key == 'c'){
-			compression = !compression;
+			jR.clear();
 		}
 		if (key == 32){ //space
 			if (Recording){
@@ -219,29 +220,37 @@ public class Main extends PApplet{
 				}
 				else{
 					log.record(jR);
-					GestureController g = log.generateGesture(CompressionType.SIMPLE);
+					GestureController g = log.generateGesture(CompressionType.NONE);
 					log.clear();
 					gesture.add(g);
 					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
 					System.out.println(g);
 					System.out.println("Gesture "+gesture.size()+" generated");
-					
-					log.record(jR);
-					g = log.generateGesture(CompressionType.AVG);
-					gesture.add(g);
-					log.clear();
-					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-					System.out.println(g);
-					System.out.println("Gesture "+gesture.size()+" generated");
-					
-					log.record(jR);
-					g = log.generateGesture(CompressionType.DBL_AVG);
-					gesture.add(g);
-					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-					System.out.println(g);
-					System.out.println("Gesture "+gesture.size()+" generated");
-					
-					jR.clear();
+//					
+//					log.record(jR);
+//					GestureController g = log.generateGesture(CompressionType.SIMPLE);
+//					log.clear();
+//					gesture.add(g);
+//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+//					System.out.println(g);
+//					System.out.println("Gesture "+gesture.size()+" generated");
+//					
+//					log.record(jR);
+//					g = log.generateGesture(CompressionType.AVG);
+//					gesture.add(g);
+//					log.clear();
+//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+//					System.out.println(g);
+//					System.out.println("Gesture "+gesture.size()+" generated");
+//					
+//					log.record(jR);
+//					g = log.generateGesture(CompressionType.DBL_AVG);
+//					gesture.add(g);
+//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+//					System.out.println(g);
+//					System.out.println("Gesture "+gesture.size()+" generated");
+//					
+//					jR.clear();
 				}
 			}
 		}

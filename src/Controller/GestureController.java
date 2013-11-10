@@ -56,7 +56,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * 
 	 * Static across all GestureControllers change with caution.
 	 */
-	private static Integer Epsilon = 15; 
+	private static Double Epsilon = 0.01; 
 	
 	/**Number of completed steps of the gesture */
 	private Integer step; 
@@ -526,6 +526,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				if (i== average.size())
 					break;
 			}
+			if (debug) System.out.println("nodes: "+compress.size());
 			average = averageReduction(compress);
 		}
 		
@@ -535,7 +536,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 
 	private List<JointRelation> reduce(int i,JointRelation alpha, boolean visited[]){
 		if (debug) System.out.print(i+" ");
-		if (visited[i])
+		if (i < 0 || visited[i])
 			return null;
 		visited[i] = true;
 		
@@ -581,15 +582,24 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		for (List<JointRelation> l : compress){
 			if (l == null)
 				System.out.println("null");
+			
 			sum = new JointRelation();
 			sum.J = new JointPair(l.get(0).J.First, l.get(0).J.Second);
 			sum.C = false;
+			Vector<Euclidean> offset = new Vector<Euclidean>();
+			Vector<Euclidean> angle = new Vector<Euclidean>();
 			for (JointRelation p : l){
-				sum.offset.translate(p.offset);
-				sum.C = sum.C&p.C; //any false will propagate from here
+//				offset.add(p.offset);
+				angle.add(p.angle);
+//				sum.offset.translate(p.offset);
+//				sum.C = sum.C&p.C; //any false will propagate from here
 			}
-			sum.offset.scale(new Euclidean(1.0/l.size(),1.0/l.size(),1.0/l.size()));
-
+			
+//			sum.offset = Euclidean.average(offset);
+			sum.angle = Euclidean.average(angle);
+			
+//			sum.offset.scale(new Euclidean(1.0/l.size(),1.0/l.size(),1.0/l.size()));
+//
 			int prev = -1;
 			for (int i=average.size()-1;i>=0;i--){
 				if (average.get(i).equalJoints(sum)){
@@ -598,6 +608,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				}
 			}
 			sum.setPrev(prev);
+//			sum = new JointRelation(sum.J, Euclidean.ZERO, sum.offset,false);
 			average.add(sum);
 		}
 		return average;
@@ -611,23 +622,24 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * @param delta : change of Epsilon
 	 */
 	public void changeTolerance(int delta){
+		//TODO fix bounds of epsilon
 		Epsilon += delta;
 		
 		//Minimum Epsilon = 0
 		if (Epsilon < 0)
-			Epsilon = 0;
+			Epsilon = .0;
 		
 		//Maximum Epsilon = 90
 		if (Epsilon > 90)
-			Epsilon = 90;
+			Epsilon = 90.0;
 	} 
 	/**
-	 * Resets Epsilon to default value of 15
+	 * Resets Epsilon to default value of 0.05
 	 */
 	public void setDefaultTolerance(){
-		Epsilon = 15;
+		Epsilon = 0.05;
 	}
-	public static Integer getTolerance(){
+	public static Double getTolerance(){
 		return Epsilon;
 	}
 	public Vector<JointRelation> getSequence(){
@@ -726,7 +738,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	protected GestureController clone(){
 		GestureController o = new GestureController();
 		o.sequence.addAll(this.sequence);
-		o.step = 0;
+		o.step = this.step;
 		return o;
 	}
 }

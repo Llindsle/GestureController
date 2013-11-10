@@ -16,8 +16,8 @@ class JointRelation{
 	/**J Pair of SimpleOpenNI joints */
 	JointPair J;
 	
-	Euclidean offset;
-	Double angle;
+//	Euclidean offset;
+	Euclidean angle;
 	
 	/**Determines if this action is concurrent with the action directly after it */
 	Boolean C;
@@ -28,7 +28,7 @@ class JointRelation{
 	JointRelation(){
 		J = null;
 		angle = null;
-		offset = null;
+//		offset = new Euclidean();
 		C = false;
 		prev = -1;
 		angle = null;
@@ -46,11 +46,11 @@ class JointRelation{
 	JointRelation(JointPair j,Euclidean pointOne, Euclidean pointTwo, boolean conn){
 		J = j;
 		
-		offset = new Euclidean(pointTwo);
-		offset.translate(pointOne.inverse());
-		offset = offset.unitVector();
-		
-		angle = new Euclidean(pointOne).angle(pointTwo);
+//		offset = new Euclidean(pointTwo);
+//		offset.translate(pointOne.inverse());
+//		offset = offset.unitVector();
+		angle = pointOne.unitVector().crossProcuct(pointTwo.unitVector());
+		//angle = new Euclidean(pointOne).angle(pointTwo);
 		
 		C = conn;
 		prev = null;
@@ -86,14 +86,16 @@ class JointRelation{
 	 */
 	public boolean equalsCoordinates(JointRelation o){
 		boolean equal;
-		equal = this.offset.isAbout(o.offset);
-		equal = equal && (GestureController.comp(angle, o.angle)==0);
+//		equal = this.offset.isAbout(o.offset);
+//		equal = equal && (GestureController.comp(angle, o.angle)==0);
+		equal = this.angle.isAbout(o.angle);
 		return equal;
 	}
 	public boolean boundedBy(JointRelation lb, JointRelation ub){
-		boolean bound = offset.isBoundedBy(lb.offset, ub.offset);
-		bound = bound && chkBounds(lb.angle, this.angle, ub.angle);
-		return bound;
+//		boolean bound = offset.isBoundedBy(lb.offset, ub.offset);
+//		bound = bound && chkBounds(lb.angle, this.angle, ub.angle);
+		return angle.isBoundedBy(lb.angle, ub.angle);
+//		return bound;
 	}
 	public boolean chkBounds(double lb, double val, double ub){
 		if (lb < ub){
@@ -105,9 +107,9 @@ class JointRelation{
 	}
 	public String toString(){
 		String ret = new String();
-		ret += "{"+J.toString()+" ";
-		ret += offset.toString();
-		ret += " A:"+angle.toString();
+		ret += "{"+(J==null ? "null":J.toString())+" ";
+//		ret += (offset==null ? "null":offset.toString());
+		ret += " A:"+(angle==null ? "null":angle.toString()+" "+angle.length());
 		ret += " C:"+C+" P:"+prev+"}";
 		return ret;
 	}
@@ -115,7 +117,7 @@ class JointRelation{
 		String content = new String();
 		content += "<"+classTag+">"+'\n';
 		content += J.toXML();
-		content += offset.toXML();
+//		content += offset.toXML();
 		content += xmlStatics.createElement("angle", angle.toString());
 		content += xmlStatics.createElement("c", C.toString());
 		content += xmlStatics.createElement("prev", prev.toString());
