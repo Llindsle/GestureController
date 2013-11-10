@@ -21,7 +21,7 @@ public class GestureRecord extends GestureController{
 	/* TODO rework this as extension of GestureController that
 	 * writes the gesture as it reads, not sure why I didn't do that 
 	 * in the first place.
-	 */
+	 */ 
 	/**Used only for debug purposes */
 	@SuppressWarnings("unused")
 	private boolean debug = true;
@@ -161,7 +161,9 @@ public class GestureRecord extends GestureController{
 	 * Removes all duplicate recorded joint comparisons that appear in sequence keeping only the head
 	 * of the sequence in R.
 	 * @deprecated
+	 * @see GestureController#simplifyGesture(CompressionType)
 	 */
+	@SuppressWarnings("unused")
 	private void compressRecording(){
 		/* Redacted
 		int i=0; //index counter

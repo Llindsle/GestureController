@@ -12,17 +12,20 @@ import controller.xmlGestureParser.xmlStatics;
 class JointRelation{
 	final private String classTag = "p";
 	
+	
 	/**J Pair of SimpleOpenNI joints */
 	JointPair J;
 	
-	/**X relationship between JointTwo and JointOne */
-	Integer X;
-	
-	/**Y relationship between JointTwo and JointOne */
-	Integer Y;
-	
-	/**Z relationship between JointTwo and JointOne */
-	Integer Z;
+	Euclidean offset;
+	Double angle;
+//	/**X relationship between JointTwo and JointOne */
+//	Integer X;
+//	
+//	/**Y relationship between JointTwo and JointOne */
+//	Integer Y;
+//	
+//	/**Z relationship between JointTwo and JointOne */
+//	Integer Z;
 	
 	/**Determines if this action is concurrent with the action directly after it */
 	Boolean C;
@@ -32,11 +35,14 @@ class JointRelation{
 	
 	JointRelation(){
 		J = null;
-		X = 0;
-		Y = 0;
-		Z = 0;
+//		X = 0;
+//		Y = 0;
+//		Z = 0;
+		angle = null;
+		offset = null;
 		C = false;
 		prev = -1;
+		angle = null;
 	}
 	/**
 	 * The constructor called by Gesturecontroller.addPoint();
@@ -48,11 +54,15 @@ class JointRelation{
 	 * @param conn : 
 	 * Is this concurrent with the next action in sequence, should not be true for last action
 	 */
-	JointRelation(int J1, int J2,Integer x, Integer y, Integer z, boolean conn){
-		J = new JointPair(J1,J2);
-		X = x; 
-		Y = y;
-		Z = z;
+	JointRelation(JointPair j,Euclidean pointOne, Euclidean pointTwo, boolean conn){
+		J = j;
+		
+		offset = new Euclidean(pointTwo);
+		offset.translate(pointOne.inverse());
+		offset = offset.unitVector();
+		
+		angle = new Euclidean(pointOne).angle(pointTwo);
+		
 		C = conn;
 		prev = null;
 	}
@@ -87,20 +97,24 @@ class JointRelation{
 	 */
 	public boolean equalsCoordinates(JointRelation o){
 		boolean equal;
-		equal = GestureController.comp(this.X, o.X) == 0;
-		equal  = equal && (GestureController.comp(this.Y, o.Y) == 0);
-		equal = equal && (GestureController.comp(this.Z, o.Z) ==0);
+		equal = this.offset.isAbout(o.offset);
+		equal = equal && (GestureController.comp(angle, o.angle)==0);
+//		equal = GestureController.comp(this.X, o.X) == 0;
+//		equal  = equal && (GestureController.comp(this.Y, o.Y) == 0);
+//		equal = equal && (GestureController.comp(this.Z, o.Z) ==0);
 		return equal;
 	}
 	public boolean boundedBy(JointRelation lb, JointRelation ub){
-		boolean bound = chkBounds(lb.X, this.X, ub.X);
-		bound = bound && chkBounds(lb.Y, this.Y, ub.Y);
-		bound = bound && chkBounds(lb.Z, this.Z, ub.Z);
+		boolean bound = offset.isBoundedBy(lb.offset, ub.offset);
+		bound = bound && chkBounds(lb.angle, this.angle, ub.angle);
+//		bound = chkBounds(lb.X, this.X, ub.X);
+//		bound = bound && chkBounds(lb.Y, this.Y, ub.Y);
+//		bound = bound && chkBounds(lb.Z, this.Z, ub.Z);
 		return bound;
 	}
-	public boolean chkBounds(int lb, int val, int ub){
+	public boolean chkBounds(double lb, double val, double ub){
 		if (lb < ub){
-			int tmp = lb;
+			double tmp = lb;
 			lb = ub;
 			ub = tmp;
 		}
@@ -108,8 +122,10 @@ class JointRelation{
 	}
 	public String toString(){
 		String ret = new String();
-		ret += "{"+J.toString();
-		ret += " < "+X+", "+Y+", "+Z+">";
+		ret += "{"+J.toString()+" ";
+		ret += offset.toString();
+		ret += " A:"+angle.toString();
+//		ret += " < "+X+", "+Y+", "+Z+">";
 		ret += " C:"+C+" P:"+prev+"}";
 		return ret;
 	}
@@ -117,9 +133,8 @@ class JointRelation{
 		String content = new String();
 		content += "<"+classTag+">"+'\n';
 		content += J.toXML();
-		content += xmlStatics.createElement("x", X.toString());
-		content += xmlStatics.createElement("y", Y.toString());
-		content += xmlStatics.createElement("z", Z.toString());
+		content += offset.toXML();
+		content += xmlStatics.createElement("angle", angle.toString());
 		content += xmlStatics.createElement("c", C.toString());
 		content += xmlStatics.createElement("prev", prev.toString());
 		content +="</"+classTag+">"+'\n';

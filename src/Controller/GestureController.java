@@ -115,13 +115,15 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * @param conn : Determines if this is concurrent with the gesture after it 
 	 * 	 NOTE: should be false for last gesture
 	 */
-	public void addPoint(int J1, int J2, 
-			Integer x, Integer y, Integer z, boolean conn){
+	public void addPoint(JointPair jP, Euclidean first, Euclidean second, boolean conn){
+//	public void addPoint(int J1, int J2, 
+//			Integer x, Integer y, Integer z, boolean conn){
 		int loc=-1;
 		
 		//TODO Check concurrent sequence to assure unique joint pairs
 		
-		JointRelation tmp = new JointRelation(J1,J2,x,y,z,conn); //Create new tmp point using values given
+		//Create new tmp point using values given
+		JointRelation tmp = new JointRelation(jP, first, second,conn); 
 		
 		//Find the last appearance of the given joint pair in the sequence array
 		for(int i=sequence.size()-1;i>=0;i--){
@@ -308,7 +310,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * 		1 :  x > (x2+Epsilon)
 	 * 		-1 : x < (x2-Epsilon)
 	 */
-	protected static int comp(float x, float x2){
+	protected static int comp(double x, double x2){
 		if ((x2+Epsilon)>= x && (x2-Epsilon) <= x)
 			return 0;
 		else if ((x2+Epsilon) < x )
@@ -331,6 +333,8 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * @param betaY : Y coordinate of point beta
 	 * @return
 	 * 		Angle between alpha and beta rounded to the nearest integer angle in degrees.
+	 * @deprecated
+	 * @see Euclidean#planarAngle()
 	 */
 	private static int angle(float alphaX, float alphaY, float betaX, float betaY){
 		float a = alphaY-betaY; //Calculate length of vertical side
@@ -350,23 +354,25 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * 			z: angle created on x-y plane
 	 */
 	protected static JointRelation compareJointPositions(JointPair n, PVector jointOne, PVector jointTwo) {
-		
+//		
 //		int x = comp(jointOne.x, jointTwo.x);
 //		int y = comp(jointOne.y, jointTwo.y);
 //		int z = comp(jointOne.z, jointTwo.z);
 		
-		//Calculate angle on X-Z plane
-		int angleX = angle(jointOne.x, jointOne.z, jointTwo.x, jointTwo.z);
+//		//Calculate angle on X-Z plane
+//		int angleX = angle(jointOne.x, jointOne.z, jointTwo.x, jointTwo.z);
+//		
+//		//Calculate angle on Y-Z plane
+//		int angleY = angle(jointOne.y, jointOne.z, jointTwo.y, jointTwo.z);
+//		
+//		//Calculate angle on X-Y plane
+//		int angleZ = angle(jointOne.x, jointOne.y, jointTwo.x, jointTwo.y);
 		
-		//Calculate angle on Y-Z plane
-		int angleY = angle(jointOne.y, jointOne.z, jointTwo.y, jointTwo.z);
+		Euclidean first = new Euclidean(jointOne.x, jointOne.y, jointOne.z);
+		Euclidean second = new Euclidean(jointTwo.x, jointTwo.y, jointTwo.z);
+		return new JointRelation(n, first, second, false);
 		
-		//Calculate angle on X-Y plane
-		int angleZ = angle(jointOne.x, jointOne.y, jointTwo.x, jointTwo.y);
-		if (n == null){
-			return new JointRelation(0,0,angleX, angleY, angleZ, false);
-		}
-		return new JointRelation(n.First,n.Second,angleX, angleY, angleZ,false);
+//		return new JointRelation(n.First,n.Second,angleX, angleY, angleZ,false);
 		//return new PVector(angleX, angleY, angleZ);
 		//return new PVector(x,y,z);
 	}
@@ -759,14 +765,13 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			sum.J = new JointPair(l.get(0).J.First, l.get(0).J.Second);
 			sum.C = false;
 			for (JointRelation p : l){
-				sum.X += p.X;
-				sum.Y += p.Y;
-				sum.Z += p.Z;
+				sum.offset.translate(p.offset);
 				sum.C = sum.C&p.C; //any false will propagate from here
 			}
-			sum.X /=l.size();
-			sum.Y /=l.size();
-			sum.Z /=l.size();
+			sum.offset.scale(new Euclidean(1.0/l.size(),1.0/l.size(),1.0/l.size()));
+//			sum.X /=l.size();
+//			sum.Y /=l.size();
+//			sum.Z /=l.size();
 
 			int prev = -1;
 			for (int i=average.size()-1;i>=0;i--){

@@ -33,8 +33,8 @@ public class Main extends PApplet{
 //	  jR.addJoint(SimpleOpenNI.SKEL_RIGHT_ELBOW);
 //	  jR.addAll();
 	   
-	  gesture.add(new GestureController("Wave"));
-	  createWaveGesture(gesture.lastElement());
+//	  gesture.add(new GestureController("Wave"));
+//	  createWaveGesture(gesture.lastElement());
 	  
 	   
 	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND);
@@ -73,27 +73,27 @@ public class Main extends PApplet{
 	  System.out.println("Setup complete");
 	}
 	
-	void createWaveGesture(GestureController G){
-		int L_Hand = SimpleOpenNI.SKEL_LEFT_HAND;
-		int L_Elbow = SimpleOpenNI.SKEL_LEFT_ELBOW;
-		G.addPoint(L_Elbow, L_Hand, 1, 1, 1, false);
-		G.addPoint(L_Elbow, L_Hand, 0, 1, 1, false);
-		G.addPoint(L_Elbow, L_Hand, -1, 1, 1,false);
-		G.addPoint(L_Elbow, L_Hand, 0,1,1,false);
-		G.addPoint(L_Elbow, L_Hand, 1,1,1,false);
-		System.out.println("Wave Gesture Added");
-	}
-	void createStirGesture(GestureController G){
-		int L_Elbow = SimpleOpenNI.SKEL_LEFT_ELBOW;
-		int L_Shoulder = SimpleOpenNI.SKEL_LEFT_SHOULDER;
-		//G.addPoint(L_Elbow, L_Hand, 0,0,1,true);
-		G.addPoint(L_Shoulder, L_Elbow, 0,-1,1,false);
-		G.addPoint(L_Shoulder, L_Elbow, -1,-1,1,false);
-		G.addPoint(L_Shoulder, L_Elbow, 0,-1,1,false);
-		G.addPoint(L_Shoulder, L_Elbow, 1,-1,1,false);
-		System.out.println("Stir Gesture Added");
-		
-	}
+//	void createWaveGesture(GestureController G){
+//		int L_Hand = SimpleOpenNI.SKEL_LEFT_HAND;
+//		int L_Elbow = SimpleOpenNI.SKEL_LEFT_ELBOW;
+//		G.addPoint(L_Elbow, L_Hand, 1, 1, 1, false);
+//		G.addPoint(L_Elbow, L_Hand, 0, 1, 1, false);
+//		G.addPoint(L_Elbow, L_Hand, -1, 1, 1,false);
+//		G.addPoint(L_Elbow, L_Hand, 0,1,1,false);
+//		G.addPoint(L_Elbow, L_Hand, 1,1,1,false);
+//		System.out.println("Wave Gesture Added");
+//	}
+//	void createStirGesture(GestureController G){
+//		int L_Elbow = SimpleOpenNI.SKEL_LEFT_ELBOW;
+//		int L_Shoulder = SimpleOpenNI.SKEL_LEFT_SHOULDER;
+//		//G.addPoint(L_Elbow, L_Hand, 0,0,1,true);
+//		G.addPoint(L_Shoulder, L_Elbow, 0,-1,1,false);
+//		G.addPoint(L_Shoulder, L_Elbow, -1,-1,1,false);
+//		G.addPoint(L_Shoulder, L_Elbow, 0,-1,1,false);
+//		G.addPoint(L_Shoulder, L_Elbow, 1,-1,1,false);
+//		System.out.println("Stir Gesture Added");
+//		
+//	}
 	public void draw()
 	{
 	  // update the cam
