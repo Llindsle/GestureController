@@ -18,14 +18,6 @@ class JointRelation{
 	
 	Euclidean offset;
 	Double angle;
-//	/**X relationship between JointTwo and JointOne */
-//	Integer X;
-//	
-//	/**Y relationship between JointTwo and JointOne */
-//	Integer Y;
-//	
-//	/**Z relationship between JointTwo and JointOne */
-//	Integer Z;
 	
 	/**Determines if this action is concurrent with the action directly after it */
 	Boolean C;
@@ -35,9 +27,6 @@ class JointRelation{
 	
 	JointRelation(){
 		J = null;
-//		X = 0;
-//		Y = 0;
-//		Z = 0;
 		angle = null;
 		offset = null;
 		C = false;
@@ -99,17 +88,11 @@ class JointRelation{
 		boolean equal;
 		equal = this.offset.isAbout(o.offset);
 		equal = equal && (GestureController.comp(angle, o.angle)==0);
-//		equal = GestureController.comp(this.X, o.X) == 0;
-//		equal  = equal && (GestureController.comp(this.Y, o.Y) == 0);
-//		equal = equal && (GestureController.comp(this.Z, o.Z) ==0);
 		return equal;
 	}
 	public boolean boundedBy(JointRelation lb, JointRelation ub){
 		boolean bound = offset.isBoundedBy(lb.offset, ub.offset);
 		bound = bound && chkBounds(lb.angle, this.angle, ub.angle);
-//		bound = chkBounds(lb.X, this.X, ub.X);
-//		bound = bound && chkBounds(lb.Y, this.Y, ub.Y);
-//		bound = bound && chkBounds(lb.Z, this.Z, ub.Z);
 		return bound;
 	}
 	public boolean chkBounds(double lb, double val, double ub){
@@ -125,7 +108,6 @@ class JointRelation{
 		ret += "{"+J.toString()+" ";
 		ret += offset.toString();
 		ret += " A:"+angle.toString();
-//		ret += " < "+X+", "+Y+", "+Z+">";
 		ret += " C:"+C+" P:"+prev+"}";
 		return ret;
 	}

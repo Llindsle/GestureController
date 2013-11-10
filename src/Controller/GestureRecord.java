@@ -18,10 +18,6 @@ import SimpleOpenNI.SimpleOpenNI;
  *
  */
 public class GestureRecord extends GestureController{
-	/* TODO rework this as extension of GestureController that
-	 * writes the gesture as it reads, not sure why I didn't do that 
-	 * in the first place.
-	 */ 
 	/**Used only for debug purposes */
 	@SuppressWarnings("unused")
 	private boolean debug = true;
@@ -29,20 +25,12 @@ public class GestureRecord extends GestureController{
 	/**Pairs of Joints to record relationship between*/
 	private Vector <JointPair> Focus;
 	
-	/**A log of each focus joint pair relation for every call to record*/
-	//private Vector<Vector<PVector>> recorder;
-	
-	/**An instance of GestureController to access its functions*/
-	//private GestureController masterControl;
-	
 	/**
 	 * Default Constructor, initializes control vectors
 	 */
 	public GestureRecord(){
 		super();
 		Focus = new Vector<JointPair>();
-		//recorder = new Vector<Vector<PVector>>();
-		//masterControl = new GestureController();
 	}
 	/**
 	 * If there is no recorded data, add a new joint pair to Focus. 
@@ -98,8 +86,6 @@ public class GestureRecord extends GestureController{
 			relative.C = conn;
 			//add relative coordinates to proper joint pair record vector
 			super.add(relative);
-			//super.addPoint(jP.First,jP.Second, (int)Relative.x, (int)Relative.y,(int) Relative.z, conn);
-			//recorder.get(i).add(Relative);
 			i++;
 		}
 	}
@@ -117,7 +103,6 @@ public class GestureRecord extends GestureController{
 		//basic checks about invalid input
 		if (log == null || endTick > log.getTicks() || startTick >= endTick){
 			System.out.println("Invalid arguments detected, aborting record");
-//			if (debug) System.out.println(log.toString()+'\n'+startTick+" "+endTick);
 			return;
 		}
 		//Checks that all focus points are available in log
@@ -130,7 +115,6 @@ public class GestureRecord extends GestureController{
 		
 		//Add recorded data in range [startTime, endTime)
 		for (int i=startTick;i<endTick;i++){
-			//Iterator<Vector<PVector>> itter = recorder.iterator();
 			int j=0;
 			for (JointPair jP : Focus){
 				//Get Joints from the log at time i
@@ -144,8 +128,6 @@ public class GestureRecord extends GestureController{
 				boolean conn = (j<Focus.size()-1);
 				relative.C = conn;
 				super.add(relative);
-			//	super.addPoint(jP.First,jP.Second, (int)relative.x, (int)relative.y,(int) relative.z, conn);
-				//itter.next().add(relative);
 				j++;
 			}
 		}
@@ -156,67 +138,6 @@ public class GestureRecord extends GestureController{
 	 */
 	public void record(JointRecorder log){
 		record(log, 0, log.getTicks());
-	}
-	/**
-	 * Removes all duplicate recorded joint comparisons that appear in sequence keeping only the head
-	 * of the sequence in R.
-	 * @deprecated
-	 * @see GestureController#simplifyGesture(CompressionType)
-	 */
-	@SuppressWarnings("unused")
-	private void compressRecording(){
-		/* Redacted
-		int i=0; //index counter
-
-		//primary sequence to compare to
-		Vector<PVector> alpha = new Vector<PVector>();
-		
-		//while the end of the list has not been reached continue checking
-		while(i < recorder.firstElement().size()){
-			//sequence to compare alpha with
-			Vector<PVector> beta = new Vector<PVector>();
-			
-			//fill beta with the ith element for every focus pair
-			for (int j=0;j<recorder.size();j++){
-				beta.add(recorder.get(j).get(i));
-			}
-			
-			//for the first element set alpha and continue
-			if (i==0){
-				alpha = beta;
-				i++;
-				continue;
-			}
-			
-			
-			boolean reset = true;
-//			if (debug) System.out.print(i+": ");
-			for (int j=0;j<alpha.size();j++){
-				if (!masterControl.equalAxes(alpha.get(j), beta.get(j))){
-					alpha = beta;
-					reset = false;
-					break;
-				}
-//				else
-//					if (debug) System.out.print(j +" equal ");
-			}
-//			if (debug) System.out.println();
-			
-			//If on all the focus points alpha == beta remove the duplicate elements
-			if (reset){
-//				if (debug) System.out.println("Removing duplicate");
-				for (int j=0;j<recorder.size();j++){
-					recorder.get(j).remove(i);
-				}
-			}
-			
-			//If the node was not removed then move on to the next one else
-			//the previous one will have been pushed back into the current position
-			else{
-				i++;
-			}
-		}
-		*/
 	}
 	/**
 	 * Creates a GestureController that represents the minimum number of steps
@@ -243,55 +164,7 @@ public class GestureRecord extends GestureController{
 		GestureController out = super.clone(); 
 		if (debug) System.out.println(out.size());
 		return out; 
-		/*
-		//new gestureController to return
-		GestureController control = new GestureController();
-
-		PVector V;
-		JointPair F;
-		
-		//pan through the recording and add each set of recorded points to the GestureController
-		for (int i=0;i<recorder.firstElement().size();i++){
-			for (int j=0;j<recorder.size()-1;j++){
-				//get current step
-				V = recorder.get(j).get(i);
-				F = Focus.get(j);
-				
-				//add current step of each joint pair as concurrent
-				control.addPoint(F.First, F.Second, (int)V.x, (int)V.y, (int)V.z, true);
-			}
-			//get final step
-			V = recorder.lastElement().get(i);
-			F = Focus.lastElement();
-			
-			//set final step as non-concurrent
-			control.addPoint(F.First, F.Second, (int)V.x, (int)V.y, (int)V.z, false);
-		}
-		
-		return control;
-		*/ 
 	}
-	/**
-	 * Adds a recorded node? I'm confused the name seemed obvious.
-	 * This is slightly dangerous as it is assumed that all focus points have equal number of 
-	 * recorded points and this can invalidate that assumption.
-	 * 
-	 * @param f : focus joint pair that t relationship taken is from
-	 * @param t : relationship to add to recorder
-	 * @return
-	 * 		True if there is a focus pair f to add t into the recording of.
-	 */
-	/*Redacted
-	boolean addNode(JointPair f, PVector t){
-		int index = Focus.indexOf(f);
-		if (index == -1)
-			return false;
-		
-		recorder.get(index).add(t);
-		
-		return true;
-	}
-	*/
 	/**
 	 * Creates and returns a copy of focus
 	 * @return
@@ -316,25 +189,20 @@ public class GestureRecord extends GestureController{
 		return s;
 	}
 	/**
-	 * Clear all recorded, data focus pairs are preserved.
+	 * Clear all recorded data, focus pairs are preserved.
 	 */
 	public void clear(){
 		super.clear();
 	}
-	/**
-	 * Returns data about this recording in a nice string format
-	 */
 	@Override
 	public String toString(){
-		char nl = '\n'; //the new line char, man I'm lazy
 		String ret = new String(); //string to return
 		
-		
 		//basic info about recording
-		ret += "Number of Joint Pairs: "+Focus.size()+nl;
+		ret += "Number of Joint Pairs: "+Focus.size()+'\n';
 		
 		if(Focus.size() == 0){
-			ret += "No Recorded Data"+nl;
+			ret += "No Recorded Data"+'\n';
 			return ret;
 		}
 		ret += "Focus Pairs: "+Focus.size();

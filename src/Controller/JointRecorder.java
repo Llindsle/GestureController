@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Vector;
 
 import processing.core.PVector;
 
@@ -59,8 +60,6 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	 * 		False if j already existed or record data exists
 	 */
 	public boolean addJoint(int j){
-//		if (debug) System.out.println(j);
-		
 		//make sure that no record exists
 		if (!isEmpty())
 			return false;
@@ -96,8 +95,6 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	 * @param user : user id to retrieve skeleton from
 	 */
 	public void record(SimpleOpenNI context, int user){
-//		if (debug) System.out.println("recording ...");
-		
 		//Make sure user is being tracked
 		if (!context.isTrackingSkeleton(user))
 			return;
@@ -208,7 +205,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 		v = getJointPosition(tick, con1, con2, focus);
 		if (v!= null) coordinites.add(v);
 //		  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND);
-//
+
 		con1 = SimpleOpenNI.SKEL_NECK;
 		con2 = SimpleOpenNI.SKEL_RIGHT_SHOULDER;
 		v = getJointPosition(tick, con1, con2, focus);
@@ -226,7 +223,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 		v = getJointPosition(tick, con1, con2, focus);
 		if (v!= null) coordinites.add(v);
 //		  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_ELBOW, SimpleOpenNI.SKEL_RIGHT_HAND);
-//
+
 		con1 = SimpleOpenNI.SKEL_LEFT_SHOULDER;
 		con2 = SimpleOpenNI.SKEL_TORSO;
 		v = getJointPosition(tick, con1, con2, focus);
@@ -237,7 +234,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 		v = getJointPosition(tick, con1, con2, focus);
 		if (v!= null) coordinites.add(v);
 //		  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_TORSO);
-//
+
 		con1 = con2;
 		con2 = SimpleOpenNI.SKEL_LEFT_HIP;
 		v = getJointPosition(tick, con1, con2, focus);
@@ -255,7 +252,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 		v = getJointPosition(tick, con1, con2, focus);
 		if (v!= null) coordinites.add(v);
 //		  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_KNEE, SimpleOpenNI.SKEL_LEFT_FOOT);
-//
+
 		con1 = SimpleOpenNI.SKEL_TORSO;
 		con2 = SimpleOpenNI.SKEL_RIGHT_HIP;
 		v = getJointPosition(tick, con1, con2, focus);
@@ -274,6 +271,16 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 		if (v!= null) coordinites.add(v);
 //		  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_KNEE, SimpleOpenNI.SKEL_RIGHT_FOOT);  
 		return coordinites;
+	}
+	/**
+	 * Returns list of coordinates dictated by the JointPairs in focus
+	 * @param tick
+	 * @param focus
+	 * @return
+	 */
+	public List<PVector []> playBack(int tick, Vector<JointPair> focus){
+		//TODO implement
+		return null;
 	}
 	/**
 	 * Retrieves the position of two joints as specified by con1 and con2
