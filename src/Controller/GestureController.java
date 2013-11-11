@@ -630,6 +630,11 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	public static Integer getTolerance(){
 		return Epsilon;
 	}
+	public Vector<JointRelation> getSequence(){
+		@SuppressWarnings("unchecked") //this is OK, casting back to JointRelation
+		Vector<JointRelation> r = (Vector<JointRelation>) sequence.clone();
+		return r;
+	}
 	public int size(){
 		return sequence.size();
 	}

@@ -1,7 +1,11 @@
 package controller;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * Objective: create a class that aggregates a list of gesture controllers
@@ -22,13 +26,71 @@ import java.util.List;
  * @author Levi Lindsley
  *
  */
-public class AggregateController extends GestureController {
+public class AggregateController{
 	/*May implement collection<GestureController> with this class to get 
 	 * for some reason that seems like it could help
 	 * may be able to create a comparator and place a global that is
 	 * compared against and get a list of nodes in the order of closeness
 	 */
-	
+
+	private class Node{
+		GestureController representative;
+		List<GestureController> council;
+		boolean goodRep; //Notes if a new representative needs elected or not
+		
+		Node(){
+			council = new ArrayList<GestureController>();
+			representative = null;
+			goodRep = false;
+		}
+		Node(List<GestureController> c){
+			council = c;
+			goodRep = false;
+			electRepresentative();
+		}
+		void electRepresentative(){
+			if (goodRep) return;
+			//use council values to create a representative
+			
+			
+			
+			goodRep = true;
+		}
+		void addCouncil(GestureController gC){
+			council.add(gC);
+			goodRep = false;
+		}
+		void replaceCouncil(List<GestureController> newCouncil){
+			council = newCouncil;
+			goodRep = false;
+		}
+		void removeCouncil(){
+			council.clear();
+			goodRep = false;
+		}
+		Double repVote(GestureController topic){
+			//return value from representative
+			return vote(representative, topic);
+		}
+		Double councilVote(GestureController topic){
+			//return closest vote from council
+			Double best = Double.MAX_VALUE;
+			for (GestureController member : council){
+				Double current = vote(member, topic);
+				if  (current < best){
+					best = current;
+				}
+			}
+			return best;
+		}
+		private Double vote(GestureController voter, GestureController topic){
+			//returns the fit of voter
+			return null;
+		}
+		
+	}
+
+		
 		/*Aggregate control into a standard/average/normalized gesture.
 		 * This will be used to determine 'distance' for the k-nearest
 		 * neighbor algorithm that will trigger bestFit() */
