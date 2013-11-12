@@ -135,8 +135,8 @@ class JointRelation{
 		return true;
 	}
 	public boolean boundedBy(JointRelation lb, JointRelation ub){
-		for(int i=0;i<angle.size();i++){
-			if (!angle.get(i).isBoundedBy(lb.angle.get(i), ub.angle.get(i)))
+		for(int i=0;i<this.angle.size();i++){
+			if (!(this.angle.get(i).isBoundedBy(lb.angle.get(i), ub.angle.get(i))))
 				return false;
 		}
 		return true;

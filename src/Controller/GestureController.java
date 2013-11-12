@@ -56,7 +56,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * 
 	 * Static across all GestureControllers change with caution.
 	 */
-	private static Double Epsilon = 0.01; 
+	private static Double Epsilon = Euclidean.getEpsilon(); 
 	
 	/**Number of completed steps of the gesture */
 	private Integer step; 
@@ -380,12 +380,21 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		if(cur.prev == -1){
 			return false; //There is no middle ground on the start
 		}
-		
+			
 		//All Other steps
 		JointRelation prev = sequence.get(cur.prev); //get previous of equal joint pair step as denoted by cur.prev
 
 		//check relation between all coordinates return true if all are within range else false
-		return V.boundedBy(cur, prev);
+		boolean range =  V.boundedBy(cur, prev);
+		
+		//check if current position is between the previous point and the one before that, this is possible
+		//in a continuous gesture due to epsilon jumping ahead
+		if (!range && prev.prev != -1){
+			cur = prev;
+			prev = sequence.get(cur.prev);
+			range = V.boundedBy(cur, prev);
+		}
+		return range;
 	}
 	/**
 	 * Checks if val is between cur and prev, the bounds do not need to be in any order thus
@@ -464,18 +473,20 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		//IF stepMach() Position is exactly what is expected
 		if (stepMatch(rel)){
 			step ++; //Increment Gesture
+//			if (debug) System.out.print("! ");
 			return true;
 		}
 
 		//IF midMatch() Position is not quite right but not wrong yet either
 		if (midMatch(rel)){
 			//  step = step; //maintain position
+//			if (debug) System.out.print(".");
 			return null;
 		}
 
 		//Position has nothing to do with what was expected
 		//Gesture Failed 
-		
+//		if (debug && step > 0) System.out.println("X");
 		step = 0; //reset gesture
 		return false;
 	} 

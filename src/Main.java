@@ -30,6 +30,7 @@ public class Main extends PApplet{
 	  jR = new JointRecorder();
 	  jR.addJoint(SimpleOpenNI.SKEL_LEFT_ELBOW);
 	  jR.addJoint(SimpleOpenNI.SKEL_LEFT_HAND);
+	  jR.addJoint(SimpleOpenNI.SKEL_LEFT_SHOULDER);
 //	  jR.addJoint(SimpleOpenNI.SKEL_RIGHT_HAND);
 //	  jR.addJoint(SimpleOpenNI.SKEL_RIGHT_ELBOW);
 //	  jR.addAll();
@@ -136,12 +137,13 @@ public class Main extends PApplet{
 	  }    
 	  
 	}
-	private void boringTriangle(PVector corner){
+	private void boringShape(PVector corner){
 		if (corner.equals(new PVector(0,0,0)))
 			return;
 		float midY = context.depthHeight()/2;
 		float midX = context.depthWidth()/2;
-		  triangle(corner.x+midX, corner.y+midY, corner.x+5+midX, corner.y+midY, corner.x-2+midX, corner.y-2+midY);
+		float radius = GestureController.getTolerance().floatValue()*1000;
+		ellipse(corner.x+midX, corner.y+midY, radius, radius);
 	}
 	private void unitDraw() {
 		fill(50,50,220);
@@ -161,15 +163,15 @@ public class Main extends PApplet{
 //		    		  System.out.println("drawing");
 		    		  stroke(255,0,0);
 		    		  doodle.get(0).mult(-1000);
-		    		  boringTriangle(doodle.get(0));
+		    		  boringShape(doodle.get(0));
 		    		  
 		    		  stroke(0,255,0);
 		    		  doodle.get(1).mult(-1000);
-		    		  boringTriangle(doodle.get(1));
+		    		  boringShape(doodle.get(1));
 		    		  
 		    		  stroke(0,0,255);
 		    		  doodle.get(2).mult(-1000);
-		    		  boringTriangle(doodle.get(2));
+		    		  boringShape(doodle.get(2));
 
 		    	  }
 		      }
@@ -276,22 +278,22 @@ public class Main extends PApplet{
 				}
 				else{
 					GestureController g;
+//					
+					log.record(jR);
+					g = log.generateGesture(CompressionType.NONE);
+					log.clear();
+					gesture.add(g);
+					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+					System.out.println(g);
+					System.out.println("Gesture "+gesture.size()+" generated");
 					
-//					log.record(jR);
-//					g = log.generateGesture(CompressionType.NONE);
-//					log.clear();
-//					gesture.add(g);
-//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-//					System.out.println(g);
-//					System.out.println("Gesture "+gesture.size()+" generated");
-					
-//					log.record(jR);
-//					g = log.generateGesture(CompressionType.SIMPLE);
-//					log.clear();
-//					gesture.add(g);
-//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-//					System.out.println(g);
-//					System.out.println("Gesture "+gesture.size()+" generated");
+					log.record(jR);
+					g = log.generateGesture(CompressionType.SIMPLE);
+					log.clear();
+					gesture.add(g);
+					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+					System.out.println(g);
+					System.out.println("Gesture "+gesture.size()+" generated");
 					
 					log.record(jR);
 					g = log.generateGesture(CompressionType.AVG);

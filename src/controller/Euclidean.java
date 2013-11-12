@@ -151,6 +151,14 @@ class Euclidean{
 	Euclidean unitize(){
 		return new Euclidean(compare(x,0.0),compare(y,0.0),compare(z,0.0));
 	}
+	private int compare(Double a, Double b){
+		int c = a.compareTo(b);
+		if (c == 0)
+			return 0;
+		if (c < 0)
+			return -1;
+		return 1;
+	}
 	static Euclidean average(Collection<Euclidean> c){
 		Euclidean a = new Euclidean(0.0,0.0,0.0);
 		for (Euclidean e : c){
@@ -171,24 +179,28 @@ class Euclidean{
 		return false;
 	}
 	boolean isBoundedBy(Euclidean lb, Euclidean ub){
-		return (isBoundedBy(ub.x, this.x, lb.x) && isBoundedBy(ub.y, this.y, lb.y) 
-				&& isBoundedBy(ub.z, this.z, lb.z));
+		return (isEpsilonBound(ub.x, this.x, lb.x) && isEpsilonBound(ub.y, this.y, lb.y)
+				&& isEpsilonBound(ub.z, this.z, lb.z));
 	}
-	private int compare(Double a, Double b){
-		int c = a.compareTo(b);
-		if (c == 0)
-			return 0;
-		if (c < 0)
-			return -1;
-		return 1;
-	}
-	private boolean isBoundedBy(double lb, double val, double ub){
-		if (ub < lb){
-			double tmp = ub;
+	private boolean isEpsilonBound(Double ub, Double val, Double lb){
+		if (ub.compareTo(lb) < 0){
+			Double tmp = ub;
 			ub = lb;
 			lb = tmp;
 		}
-		return (lb <= val && val <= ub);
+		return isBoundedBy(ub+(Epsilon*.5), val, lb-(Epsilon*.5));
+	}
+	boolean isTightBoundedBy(Euclidean lb, Euclidean ub){
+		return (isBoundedBy(ub.x, this.x, lb.x) && isBoundedBy(ub.y, this.y, lb.y) 
+				&& isBoundedBy(ub.z, this.z, lb.z));
+	}
+	private boolean isBoundedBy(Double lb, Double val, Double ub){
+		if (ub.compareTo(lb)< 0 ){
+			Double tmp = ub;
+			ub = lb;
+			lb = tmp;
+		}
+		return (lb.compareTo(val) <= 0 && val.compareTo(ub) <= 0 );
 	}
 	public boolean equals(Object o){
 		if (o == null)
@@ -203,6 +215,9 @@ class Euclidean{
 		bits  = bits ^ Double.doubleToLongBits(y);
 		bits = bits ^ Double.doubleToLongBits(z);
 		return (int)(bits ^ (bits >>>32));
+	}
+	public static Double getEpsilon(){
+		return Epsilon;
 	}
 	public String toString(){
 		return "<"+x+", "+y+", "+z+">";
