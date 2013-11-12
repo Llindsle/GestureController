@@ -190,6 +190,41 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		//The gesture was not finished return false
 		return false;
 	}
+	public boolean isComplete(SimpleOpenNI context, int user, Vector<PVector> points){
+		if (isComplete(context, user))
+			return true;
+		points.clear();
+//		if (step == 0 ||step == size())
+//			return false;
+//		if ((JointRelation.Interpretation & 0x2) == 0)
+//			return false;
+		
+//		points = new Vector<PVector>();
+		Euclidean pos;
+		if (step == 0)
+			points.add(new PVector());
+		else{
+			pos = sequence.get(step-1).angle.get(sequence.get(step-1).angle.size()-1);
+			points.add(new PVector(pos.x.floatValue(),pos.y.floatValue(),pos.z.floatValue()));
+		}
+		if (step == size()){
+			points.add(new PVector());
+			points.add(new PVector());
+		}
+		
+		else{
+			PVector JointOneReal = getRealCoordinites(context,user, sequence.get(step).J.First);
+			PVector JointTwoReal = getRealCoordinites(context,user, sequence.get(step).J.Second);
+			JointRelation rel = compareJointPositions(sequence.get(step).J,JointOneReal, JointTwoReal);
+			
+			pos = rel.angle.get(rel.angle.size()-1);
+			points.add(new PVector(pos.x.floatValue(),pos.y.floatValue(),pos.z.floatValue()));
+
+			pos = sequence.get(step).angle.get(sequence.get(step).angle.size()-1);
+			points.add(new PVector(pos.x.floatValue(),pos.y.floatValue(),pos.z.floatValue()));
+		}
+		return false;
+	}
 	public boolean isComplete(JointRecorder context, int tick){
 		if (step == size()){
 			step = 0;

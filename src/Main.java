@@ -16,6 +16,7 @@ public class Main extends PApplet{
 	boolean Recording = false;
 	boolean compression = false;
 	boolean playback = false;
+	boolean unitMode = false;
 	
 	Vector<GestureController> gesture;
 	GestureRecord log;
@@ -99,6 +100,10 @@ public class Main extends PApplet{
 	  // update the cam
 	  context.update();
 	  
+	  if (unitMode){
+		  unitDraw();
+		  return;
+	  }
 	  // draw depthImageMap
 	  image(context.depthImage(),0,0);
 	  
@@ -131,6 +136,50 @@ public class Main extends PApplet{
 	  }    
 	  
 	}
+	private void boringTriangle(PVector corner){
+		if (corner.equals(new PVector(0,0,0)))
+			return;
+		float midY = context.depthHeight()/2;
+		float midX = context.depthWidth()/2;
+		  triangle(corner.x+midX, corner.y+midY, corner.x+5+midX, corner.y+midY, corner.x-2+midX, corner.y-2+midY);
+	}
+	private void unitDraw() {
+		fill(50,50,220);
+		rect(0,0,context.depthWidth(),context.depthHeight());
+		  // draw the skeleton if it's available
+		  int[] userList = context.getUsers();
+		  for(int i=0;i<userList.length;i++)
+		  {
+		    if(context.isTrackingSkeleton(userList[i])){
+		    	Vector<PVector> doodle = new Vector<PVector>();
+		      //check the gesture for completion
+		      for (int j=0;j<gesture.size();j++){
+		    	  if (gesture.get(j).isComplete(context, userList[i],doodle)){
+		    		  System.out.println(gesture.get(j).Name);
+		    	  }
+		    	  if (!doodle.isEmpty()){
+//		    		  System.out.println("drawing");
+		    		  stroke(255,0,0);
+		    		  doodle.get(0).mult(-1000);
+		    		  boringTriangle(doodle.get(0));
+		    		  
+		    		  stroke(0,255,0);
+		    		  doodle.get(1).mult(-1000);
+		    		  boringTriangle(doodle.get(1));
+		    		  
+		    		  stroke(0,0,255);
+		    		  doodle.get(2).mult(-1000);
+		    		  boringTriangle(doodle.get(2));
+
+		    	  }
+		      }
+			  if (Recording){
+				  jR.record(context, userList[i]);
+			  }
+		    }
+		  }    
+	}
+
 	void togglePlayBack(){
 		playback = !playback;
 		System.out.print("Playback mode: ");
@@ -206,6 +255,9 @@ public class Main extends PApplet{
 	// SimpleOpenNI events
 	
 	public void keyPressed(){
+		if (key == 'u'){
+			unitMode = !unitMode;
+		}
 		if (key == 'p'){
 			togglePlayBack();
 		}
@@ -225,29 +277,29 @@ public class Main extends PApplet{
 				else{
 					GestureController g;
 					
-					log.record(jR);
-					g = log.generateGesture(CompressionType.NONE);
-					log.clear();
-					gesture.add(g);
-					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-					System.out.println(g);
-					System.out.println("Gesture "+gesture.size()+" generated");
-					
-					log.record(jR);
-					g = log.generateGesture(CompressionType.SIMPLE);
-					log.clear();
-					gesture.add(g);
-					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-					System.out.println(g);
-					System.out.println("Gesture "+gesture.size()+" generated");
+//					log.record(jR);
+//					g = log.generateGesture(CompressionType.NONE);
+//					log.clear();
+//					gesture.add(g);
+//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+//					System.out.println(g);
+//					System.out.println("Gesture "+gesture.size()+" generated");
 					
 //					log.record(jR);
-//					g = log.generateGesture(CompressionType.AVG);
-//					gesture.add(g);
+//					g = log.generateGesture(CompressionType.SIMPLE);
 //					log.clear();
+//					gesture.add(g);
 //					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-//					System.out.println(gesture.lastElement());
+//					System.out.println(g);
 //					System.out.println("Gesture "+gesture.size()+" generated");
+					
+					log.record(jR);
+					g = log.generateGesture(CompressionType.AVG);
+					gesture.add(g);
+					log.clear();
+					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+					System.out.println(gesture.lastElement());
+					System.out.println("Gesture "+gesture.size()+" generated");
 //					
 //					log.record(jR);
 //					g = log.generateGesture(CompressionType.DBL_AVG);

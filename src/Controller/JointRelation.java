@@ -17,7 +17,7 @@ class JointRelation{
 	
 	//These are used to pan through the different types of comparisons
 	//The best choice at current seems to be 0x3 or 0x7
-	final static int Interpretation = 0x3;
+	final static int Interpretation = 0x1;
 	private enum AngleType{
 		//Good
 		CROSS_PRODUCT(0x1),
