@@ -64,6 +64,8 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	
 	final private String classTag = "gesture";
 	
+	private static BufferedWriter logWriter;
+	
 	/**The Sequence if joint relationships describing the gesture */
 	private Vector<JointRelation> sequence; 
 	
@@ -106,6 +108,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 */
 	private void init(){
 		sequence = new Vector<JointRelation>();
+		logWriter = null;
 		step = 0;
 	}
 	public void add(JointRelation j){
@@ -171,6 +174,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		//reset and return true
 		if (step == sequence.size()){
 			step = 0; //reset gesture
+			logGesture();
 			return true; //return the successful completion
 		}
 		
@@ -216,8 +220,10 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		return false;
 	}
 	public boolean isComplete(SimpleOpenNI context, int user, Vector<PVector> points){
-		if (isComplete(context, user))
+		if (isComplete(context, user)){
+			logGesture();
 			return true;
+		}
 		points.clear();
 //		if (step == 0 ||step == size())
 //			return false;
@@ -253,6 +259,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	public boolean isComplete(JointRecorder context, int tick){
 		if (step == size()){
 			step = 0;
+			logGesture();
 			return true;
 		}
 
@@ -289,6 +296,14 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		// in the sequence as remembered by Hold
 		if (wait){
 			step = Hold; 
+		}
+		
+		return false;
+	}
+	boolean isComplete(JointRelation context){
+		if (step == size()){
+			logGesture();
+			return true;
 		}
 		
 		return false;
@@ -618,6 +633,9 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				
 				//compIndex is still in reverse order so next and previous look odd
 				
+				//TODO rework the prev/next node blocks to pan through the 
+				//correct node and break when the node ends
+				
 				//add previous nodes
 				if (i < compIndex.size()-1){
 					Vector<Integer> prevIndex = compIndex.get(i+1);
@@ -833,8 +851,42 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	public static Double getTolerance(){
 		return Epsilon;
 	}
+	public static void enableLog(String logFile) throws IOException{
+		logWriter = new BufferedWriter(new FileWriter(logFile));
+		String content = new String();
+		content +="<?xml version=\"1.0\"?>"+'\n';
+		content +="<root>"+'\n';
+		logWriter.write(content);
+	}
+	private void logGesture(){
+		if (logWriter == null)
+			return;
+		
+		String content = new String();
+		Long time = System.currentTimeMillis();
+		content += "<gestureCompletion>"+'\n';
+		content += xmlStatics.createElement("time", time.toString());
+		content += "</gestureCompletion>"+'\n';
+		try {
+			logWriter.write(content);
+			logWriter.flush();
+		} catch (IOException e) {
+			System.err.println("Gesture failed to log."+'\n'+"Gesture: "+Name+
+					'\n'+"Time: "+System.currentTimeMillis()+'\n'+"logWriter reset");
+			logWriter = null;
+//			e.printStackTrace();
+		}
+	}
+	public static void closeLog() throws IOException{
+		if (logWriter == null)
+			return;
+		
+		logWriter.write("</root>");
+		logWriter.close();
+		logWriter = null;
+	}
 	public Vector<JointRelation> getSequence(){
-		@SuppressWarnings("unchecked") //this is OK, casting back to JointRelation
+		@SuppressWarnings("unchecked") //this is OK, casting back to Vector<JointRelation>
 		Vector<JointRelation> r = (Vector<JointRelation>) sequence.clone();
 		return r;
 	}
