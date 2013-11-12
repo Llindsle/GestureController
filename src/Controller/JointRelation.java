@@ -16,14 +16,19 @@ class JointRelation{
 	final private String classTag = "p";
 	
 	//These are used to pan through the different types of comparisons
-	//The best choice at current seems to be 0x3 or 0x7
+	//The best choice at current seems to be 0x1, 0x3, 0x7 each increase slightly
+	//more bounded than the previous.
 	final static int Interpretation = 0x1;
 	private enum AngleType{
-		//Good
+		//Best
 		CROSS_PRODUCT(0x1),
 		//Good
 		UNIT_VECTOR(0x2),
-		//This is the old grid system
+		/* This is the old grid system
+		 * still works good unless you hover around a boundary or never
+		 * change zones so in other words, not really thats why other systems
+		 * got added.
+		 */
 		GRID(0x4),
 		//this is really bad with the epsilon needed for the others
 		//the bound is to tight and it registers a gesture

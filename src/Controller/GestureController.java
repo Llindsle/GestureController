@@ -34,7 +34,30 @@ import SimpleOpenNI.*;
  *
  */
 public class GestureController implements xmlGestureParser<GestureController>{
-	public enum CompressionType{NONE, SIMPLE, AVG, DBL_AVG};
+	/**
+	 * Different types of compression available for use on a gesture
+	 * The compression ranges from least(NONE), to most(DBL_AVG).
+	 * 
+	 * DBL_AVG is currently not behaving as expected.
+	 * 
+	 * @author Levi Lindsley
+	 *
+	 */
+	public enum CompressionType{
+		//Does not compress the gesture, effectively disabling simplifyGesture
+		NONE,
+		//Groups the raw data into nodes that are within the same Epsilon range
+		//by panning through the list and taking the first non-used value to start
+		//a new node with. Then takes the head of each node as the node value
+		SIMPLE,
+		//Groups data into Epsilon nodes and then averages across the node to 
+		//get an approximate value for that node
+		AVG,
+		//Groups data into Epsilon nodes then takes average, the average values are 
+		//then used to seed the node sorting process a second time and the average
+		//of the secondary Epsilon nodes created in this way is taken as the value
+		DBL_AVG};
+		
 	/** Used only to toggle debug output */
 	@SuppressWarnings("unused")
 	private boolean debug = true;
@@ -165,11 +188,6 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		 */
 		while (step > 0 && step < sequence.size() &&sequence.get(step-1).C){
 			if (debug) System.out.print("con");
-			//Some part of the gesture failed, reset the entire gesture
-			if (N == false){
-				step = 0; //Reset gesture
-				return false; //end the while loop a step failed
-			}
 			/*
 			 * A part hit a holding pattern thus forcing the entire concurrent sequence into
 			 * a holding pattern but all parts of the concurrent sequence must be checked for
@@ -178,6 +196,13 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			if (N == null){
 				wait = true; //holding pattern true
 			}
+			
+			//Some part of the gesture failed, reset the entire gesture
+			if (N == false){
+				step = 0; //Reset gesture
+				return false; //end the while loop a step failed
+			}
+
 			N = next(context, user); //continue to the next part of the gesture
 		}
 		
@@ -540,6 +565,8 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		
 		boolean reduced[] = new boolean[sequence.size()];
 		List<List<JointRelation>> compress = new ArrayList<List<JointRelation>>();
+		List<Vector<Integer>> compIndex = new ArrayList<Vector<Integer>>();
+		Vector<Integer> localIndex;
 		
 		/* This plays through backwards because if there is multiple sets of focus
 		 * joints in the sequence then it must use previous to determine the relationship
@@ -549,7 +576,9 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			if(!reduced[i]){
 //				compress.add(reduce(i,null,reduced));
 				if (debug) System.out.print("X ");
-				compress.add(reduce(i,reduced));
+				localIndex = new Vector<Integer>();
+				compress.add(reduce(i,reduced, localIndex));
+				compIndex.add(localIndex);
 			}
 		}
 		
@@ -576,22 +605,56 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		Vector<JointRelation> average = averageReduction(compress);
 		
 		if (type == CompressionType.DBL_AVG){
-			int i=0;
+			int i=average.size()-1; //average is now correctly ordered
 			reduced = new boolean [size()];
 			compress.clear();
-			for (int j=sequence.size()-1;j>=0;j--){
-				JointRelation r = average.get(i);
-				if (!reduced[j]){
-					List<JointRelation> l = reduce(j,r,reduced);
-					if (l != null)
-						compress.add(l);
-					i++;
-					if (i==average.size())
-						break;
+			int j = sequence.size()-1;
+//			for (Vector<Integer> nodeIndex : compIndex){
+			for (i=0;i<compIndex.size();i++){
+				reduced = new boolean [size()];
+				Vector<Integer> nodeIndex = compIndex.get(i);
+				List<JointRelation> l = new ArrayList<JointRelation>();
+				JointRelation alpha = average.get(i);
+				
+				//compIndex is still in reverse order so next and previous look odd
+				
+				//add previous nodes
+				if (i < compIndex.size()-1){
+					Vector<Integer> prevIndex = compIndex.get(i+1);
+					List<JointRelation> s = reduce(prevIndex.firstElement(),alpha, reduced);
+					if (s != null)
+						l.addAll(s);
 				}
-				if (i== average.size())
-					break;
+				
+				//add current node
+				for (Integer k : nodeIndex){
+					l.add(sequence.get(k));
+				}
+
+				//add next nodes
+				if (i > 0){
+					Vector<Integer> nextIndex = compIndex.get(i-1);
+					List<JointRelation> s = reduce(nextIndex.lastElement(),alpha, reduced);
+					if (s != null)
+						l.addAll(s);
+				}
+				compress.add(l);
 			}
+//			for (int j=sequence.size()-1;j>=0;j--){
+//			while (j>=0){
+//				JointRelation r = average.get(i);
+//				if (!reduced[j]){
+//					List<JointRelation> l = reduce(j,r,reduced);
+//					if (l != null)
+//						compress.add(l);
+//					i--;
+//					if (i==-1)
+//						break;
+//				}
+//				else{
+//					j--;
+//				}
+//			}
 			if (debug) System.out.println("nodes: "+compress.size());
 			average = averageReduction(compress);
 		}
@@ -599,12 +662,18 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		sequence = average;
 
 	}
-	private List<JointRelation> reduce(int i, boolean visit[]){
-		if (i < 0 || visit[i])
+	private List<JointRelation> reduce(int i, boolean visit[], Vector<Integer> index){
+		if (i < 0 || visit[i]){
+			index.clear();
 			return null;
+		}
 		
 		visit[i] = true;
 		List<JointRelation> l = new ArrayList<JointRelation>();
+		
+		index.clear();
+		index.add(i);
+		
 		JointRelation alpha = sequence.get(i);
 		JointRelation beta;
 		Integer prev = alpha.prev;
@@ -617,17 +686,21 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				if (l.size() > 2){
 					JointRelation outer = l.get(l.size()-2);
 					JointRelation inner = l.get(l.size()-1);
-					if (inner.boundedBy(outer, beta))
+					if (inner.boundedBy(outer, beta)){
 						l.add(beta);
+						index.add(prev);
+					}
 					else
 						return l;
 				}
 				else{
+					index.add(prev);
 					l.add(beta);
 				}
 			}
 			else
 				return l;
+			
 			if (debug) System.out.print(prev+" ");
 			visit[prev] = true;
 			prev = beta.prev;

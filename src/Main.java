@@ -146,7 +146,7 @@ public class Main extends PApplet{
 		ellipse(corner.x+midX, corner.y+midY, radius, radius);
 	}
 	private void unitDraw() {
-		fill(50,50,220);
+		fill(240,248,255);
 		rect(0,0,context.depthWidth(),context.depthHeight());
 		  // draw the skeleton if it's available
 		  int[] userList = context.getUsers();
@@ -287,14 +287,14 @@ public class Main extends PApplet{
 					System.out.println(g);
 					System.out.println("Gesture "+gesture.size()+" generated");
 					
-					log.record(jR);
-					g = log.generateGesture(CompressionType.SIMPLE);
-					log.clear();
-					gesture.add(g);
-					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-					System.out.println(g);
-					System.out.println("Gesture "+gesture.size()+" generated");
-					
+//					log.record(jR);
+//					g = log.generateGesture(CompressionType.SIMPLE);
+//					log.clear();
+//					gesture.add(g);
+//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+//					System.out.println(g);
+//					System.out.println("Gesture "+gesture.size()+" generated");
+//					
 					log.record(jR);
 					g = log.generateGesture(CompressionType.AVG);
 					gesture.add(g);
@@ -303,12 +303,12 @@ public class Main extends PApplet{
 					System.out.println(gesture.lastElement());
 					System.out.println("Gesture "+gesture.size()+" generated");
 //					
-//					log.record(jR);
-//					g = log.generateGesture(CompressionType.DBL_AVG);
-//					gesture.add(g);
-//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-//					System.out.println(g);
-//					System.out.println("Gesture "+gesture.size()+" generated");
+					log.record(jR);
+					g = log.generateGesture(CompressionType.DBL_AVG);
+					gesture.add(g);
+					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+					System.out.println(g);
+					System.out.println("Gesture "+gesture.size()+" generated");
 //					
 //					jR.clear();
 				}
