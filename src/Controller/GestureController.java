@@ -191,7 +191,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		return false;
 	}
 	public boolean isComplete(JointRecorder context, int tick){
-		if (step == context.getTicks()){
+		if (step == size()){
 			step = 0;
 			return true;
 		}
@@ -458,18 +458,27 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		//IF stepMach() Position is exactly what is expected
 		if (stepMatch(rel)){
 			step ++; //Increment Gesture
+//			if (debug) System.out.println(Name+" continue");
 			return true;
 		}
 
 		//IF midMatch() Position is not quite right but not wrong yet either
 		if (midMatch(rel)){
 			//  step = step; //maintain position
+//			if (debug) System.out.println(Name+" Holding");
 			return null;
 		}
 
 		//Position has nothing to do with what was expected
 		//Gesture Failed 
 		
+//		if (debug && step > 0){
+//			System.out.println(Name+" failed");
+//			System.out.println("Previous: "+sequence.get(sequence.get(step).prev));
+//			System.out.println(" Current: "+rel);
+//			System.out.println("    Next: "+sequence.get(step));
+//			
+//		}
 		step = 0; //reset gesture
 		return false;
 	}
@@ -485,15 +494,26 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		
 		boolean reduced[] = new boolean[sequence.size()];
 		List<List<JointRelation>> compress = new ArrayList<List<JointRelation>>();
+		
+		/* This plays through backwards because if there is multiple sets of focus
+		 * joints in the sequence then it must use previous to determine the relationship
+		 * between the values of sequence
+		 */
 		for (int i = sequence.size()-1;i>=0;i--){
 			if(!reduced[i]){
-				compress.add(reduce(i,null,reduced));
+//				compress.add(reduce(i,null,reduced));
+				if (debug) System.out.print("X ");
+				compress.add(reduce(i,reduced));
 			}
 		}
+		
 		if (debug) System.out.println("nodes: "+compress.size());
 		if (type == CompressionType.SIMPLE){
 			Vector<JointRelation> simple = new Vector<JointRelation>();
-			for (List<JointRelation> l : compress){
+//			for (List<JointRelation> l : compress){
+			//walk the reversed list in reverse for correct direction
+			for (int i=compress.size()-1;i>=0;i--){
+				List<JointRelation> l = compress.get(i);
 				JointRelation head = l.get(0);
 				int p = simple.size()-1;
 				for (JointRelation j : simple){
@@ -533,7 +553,41 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		sequence = average;
 
 	}
-
+	private List<JointRelation> reduce(int i, boolean visit[]){
+		if (i < 0 || visit[i])
+			return null;
+		
+		visit[i] = true;
+		List<JointRelation> l = new ArrayList<JointRelation>();
+		JointRelation alpha = sequence.get(i);
+		JointRelation beta;
+		Integer prev = alpha.prev;
+		
+		l.add(alpha);
+		if (debug) System.out.print(i+" ");
+		while (prev != null && prev > -1){
+			beta = sequence.get(prev);
+			if (alpha.equalsCoordinates(beta)){
+				if (l.size() > 2){
+					JointRelation outer = l.get(l.size()-2);
+					JointRelation inner = l.get(l.size()-1);
+					if (inner.boundedBy(outer, beta))
+						l.add(beta);
+					else
+						return l;
+				}
+				else{
+					l.add(beta);
+				}
+			}
+			else
+				return l;
+			if (debug) System.out.print(prev+" ");
+			visit[prev] = true;
+			prev = beta.prev;
+		}
+		return l;
+	}
 	private List<JointRelation> reduce(int i,JointRelation alpha, boolean visited[]){
 		if (debug) System.out.print(i+" ");
 		if (i < 0 || visited[i])
@@ -565,7 +619,24 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		}
 		if (l==null)
 			l = new ArrayList<JointRelation>();
-		l.add(current);
+		
+		if (l.size() > 2){
+			JointRelation outside = l.get(l.size()-2);
+			JointRelation inside = l.get(l.size()-1);
+			
+			//check if inside is bounded by this and outside
+			//if it is not then this point should go in another list
+			if (inside.boundedBy(current, outside))
+				l.add(current);
+			else{
+				if (debug) System.out.print("unvisit("+i+")");
+				//Unvisit so the driver can start a new node here
+				visited[i] = false;
+			}
+		}
+		
+		else
+			l.add(current);
 		return l;
 	}
 	private Vector<JointRelation> averageReduction(List<List<JointRelation>> compress){
@@ -576,30 +647,31 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		 * concurrent condition then the average will be a terminating
 		 * condition.
 		 * 
+		 * concurrent check is not implemented
+		 * 
 		 */
 		Vector<JointRelation> average = new Vector<JointRelation>();
 		JointRelation sum;
-		for (List<JointRelation> l : compress){
-			if (l == null)
-				System.out.println("null");
+//		for (List<JointRelation> l : compress){
+		
+		//reverse the reverse for forward direction
+		for (int j=compress.size()-1;j>=0;j--){
+			List<JointRelation> l = compress.get(j);
 			
 			sum = new JointRelation();
 			sum.J = new JointPair(l.get(0).J.First, l.get(0).J.Second);
 			sum.C = false;
-			Vector<Euclidean> offset = new Vector<Euclidean>();
-			Vector<Euclidean> angle = new Vector<Euclidean>();
-			for (JointRelation p : l){
-//				offset.add(p.offset);
-				angle.add(p.angle);
-//				sum.offset.translate(p.offset);
-//				sum.C = sum.C&p.C; //any false will propagate from here
+			sum.angle = new ArrayList<Euclidean>();
+			for (int i=0;i<l.get(0).angle.size();i++){
+				Vector<Euclidean> angle = new Vector<Euclidean>();
+				for (JointRelation p : l){
+					angle.add(p.angle.get(i));
+	//				sum.C = sum.C&p.C; //any false will propagate from here
+				} 
+				
+				sum.angle.add(Euclidean.average(angle));
 			}
 			
-//			sum.offset = Euclidean.average(offset);
-			sum.angle = Euclidean.average(angle);
-			
-//			sum.offset.scale(new Euclidean(1.0/l.size(),1.0/l.size(),1.0/l.size()));
-//
 			int prev = -1;
 			for (int i=average.size()-1;i>=0;i--){
 				if (average.get(i).equalJoints(sum)){
@@ -608,9 +680,9 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				}
 			}
 			sum.setPrev(prev);
-//			sum = new JointRelation(sum.J, Euclidean.ZERO, sum.offset,false);
 			average.add(sum);
 		}
+		
 		return average;
 	}
 	/**

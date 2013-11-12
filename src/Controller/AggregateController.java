@@ -54,7 +54,7 @@ public class AggregateController{
 			
 			
 			
-			goodRep = true;
+			goodRep = true; 
 		}
 		void addCouncil(GestureController gC){
 			council.add(gC);

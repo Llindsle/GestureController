@@ -1,5 +1,8 @@
 package controller;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import controller.xmlGestureParser.xmlStatics;
 
 /**
@@ -12,12 +15,33 @@ import controller.xmlGestureParser.xmlStatics;
 class JointRelation{
 	final private String classTag = "p";
 	
+	//These are used to pan through the different types of comparisons
+	//The best choice at current seems to be 0x3 or 0x7
+	final static int Interpretation = 0x3;
+	private enum AngleType{
+		//Good
+		CROSS_PRODUCT(0x1),
+		//Good
+		UNIT_VECTOR(0x2),
+		//This is the old grid system
+		GRID(0x4),
+		//this is really bad with the epsilon needed for the others
+		//the bound is to tight and it registers a gesture
+		ANGLE_2D(0x8); 
+		
+		private int mask;
+
+		AngleType(int i){
+			this.mask = i;
+		}
+	}
+	
 	
 	/**J Pair of SimpleOpenNI joints */
 	JointPair J;
 	
 //	Euclidean offset;
-	Euclidean angle;
+	List<Euclidean> angle;
 	
 	/**Determines if this action is concurrent with the action directly after it */
 	Boolean C;
@@ -49,7 +73,26 @@ class JointRelation{
 //		offset = new Euclidean(pointTwo);
 //		offset.translate(pointOne.inverse());
 //		offset = offset.unitVector();
-		angle = pointOne.unitVector().crossProcuct(pointTwo.unitVector());
+		angle = new ArrayList<Euclidean>();
+		if ((AngleType.CROSS_PRODUCT.mask & Interpretation)!= 0)
+			angle.add(pointOne.unitVector().crossProcuct(pointTwo.unitVector()));
+		if ((AngleType.ANGLE_2D.mask & Interpretation)!= 0){
+			Euclidean tmp = pointOne.planarAngle(pointTwo);
+//			tmp.x = 0.0;
+//			tmp.y = 0.0;
+			angle.add(tmp);
+		}
+		if ((AngleType.GRID.mask & Interpretation)!= 0){
+			Euclidean tmp = new Euclidean(pointOne);
+			tmp.translate(pointTwo.inverse());
+			angle.add(tmp.unitize());
+		}
+		if ((AngleType.UNIT_VECTOR.mask & Interpretation)!= 0){
+			Euclidean tmp = new Euclidean();
+			tmp = pointOne.unitVector();
+			tmp.translate(pointTwo.unitVector().inverse());
+			angle.add(tmp);
+		}
 		//angle = new Euclidean(pointOne).angle(pointTwo);
 		
 		C = conn;
@@ -85,17 +128,18 @@ class JointRelation{
 	 * 		this.X == o.X && this.Y == o.Y && this.Z == o.Z +- Epsion.
 	 */
 	public boolean equalsCoordinates(JointRelation o){
-		boolean equal;
-//		equal = this.offset.isAbout(o.offset);
-//		equal = equal && (GestureController.comp(angle, o.angle)==0);
-		equal = this.angle.isAbout(o.angle);
-		return equal;
+		for (int i=0;i<angle.size();i++){
+			if (!angle.get(i).isAbout(o.angle.get(i)))
+				return false;
+		}
+		return true;
 	}
 	public boolean boundedBy(JointRelation lb, JointRelation ub){
-//		boolean bound = offset.isBoundedBy(lb.offset, ub.offset);
-//		bound = bound && chkBounds(lb.angle, this.angle, ub.angle);
-		return angle.isBoundedBy(lb.angle, ub.angle);
-//		return bound;
+		for(int i=0;i<angle.size();i++){
+			if (!angle.get(i).isBoundedBy(lb.angle.get(i), ub.angle.get(i)))
+				return false;
+		}
+		return true;
 	}
 	public boolean chkBounds(double lb, double val, double ub){
 		if (lb < ub){
@@ -109,7 +153,7 @@ class JointRelation{
 		String ret = new String();
 		ret += "{"+(J==null ? "null":J.toString())+" ";
 //		ret += (offset==null ? "null":offset.toString());
-		ret += " A:"+(angle==null ? "null":angle.toString()+" "+angle.length());
+		ret += " A:"+(angle==null ? "null":angle.toString());
 		ret += " C:"+C+" P:"+prev+"}";
 		return ret;
 	}

@@ -110,6 +110,11 @@ public class Main extends PApplet{
 	    if(context.isTrackingSkeleton(userList[i])){
 	  	  if(playback){
 			  viewRecord();
+		      for (int j=0;j<gesture.size();j++)
+		    	  if (gesture.get(j).isComplete(jR, jR.getPlayBackTick())){
+		    		  System.out.println(gesture.get(j).Name);
+		    	  }
+		     return;
 		  }
 	  	  else
 	  		  drawSkeleton(userList[i]);
@@ -121,7 +126,6 @@ public class Main extends PApplet{
 	    	  }
 		  if (Recording){
 			  jR.record(context, userList[i]);
-//			  log.record(context, userList[i]);
 		  }
 	    }
 	  }    
@@ -219,28 +223,30 @@ public class Main extends PApplet{
 					Recording = true;
 				}
 				else{
+					GestureController g;
+					
 					log.record(jR);
-					GestureController g = log.generateGesture(CompressionType.NONE);
+					g = log.generateGesture(CompressionType.NONE);
 					log.clear();
 					gesture.add(g);
 					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
 					System.out.println(g);
 					System.out.println("Gesture "+gesture.size()+" generated");
-//					
-//					log.record(jR);
-//					GestureController g = log.generateGesture(CompressionType.SIMPLE);
-//					log.clear();
-//					gesture.add(g);
-//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-//					System.out.println(g);
-//					System.out.println("Gesture "+gesture.size()+" generated");
-//					
+					
+					log.record(jR);
+					g = log.generateGesture(CompressionType.SIMPLE);
+					log.clear();
+					gesture.add(g);
+					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+					System.out.println(g);
+					System.out.println("Gesture "+gesture.size()+" generated");
+					
 //					log.record(jR);
 //					g = log.generateGesture(CompressionType.AVG);
 //					gesture.add(g);
 //					log.clear();
 //					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-//					System.out.println(g);
+//					System.out.println(gesture.lastElement());
 //					System.out.println("Gesture "+gesture.size()+" generated");
 //					
 //					log.record(jR);

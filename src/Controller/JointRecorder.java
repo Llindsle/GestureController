@@ -309,6 +309,9 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	public int getTicks(){
 		return recorder.size();
 	}
+	public int getPlayBackTick(){
+		return playBackTick;
+	}
 	/**
 	 * Checks if joints contains j
 	 * @param j : value to check for

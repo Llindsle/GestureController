@@ -1,5 +1,6 @@
 package controller;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import controller.xmlGestureParser.xmlStatics;
@@ -11,7 +12,7 @@ import controller.xmlGestureParser.xmlStatics;
  *
  */
 class Euclidean{
-	private static Double Epsilon = 0.05;
+	private static Double Epsilon = 0.025;
 	private static final String classTag = "Euclidean";
 	
 	static final Euclidean ZERO = new Euclidean (0.0,0.0,0.0);
@@ -55,7 +56,18 @@ class Euclidean{
 	 * @return
 	 */
 	Euclidean planarAngle(Euclidean o){
-		return null;
+		Euclidean planear = new Euclidean();
+		Euclidean tmp1 = new Euclidean(this.x, 0.0,this.z);
+		Euclidean tmp2 = new Euclidean(o.x,0.0,o.z);
+		planear.x = Math.acos((tmp1.dotProduct(tmp2))/((tmp1.length())*(tmp2.length())));
+		tmp1 = new Euclidean(0.0,this.y,this.y);
+		tmp2 = new Euclidean(0.0,o.y,o.z);
+		planear.y = Math.acos((tmp1.dotProduct(tmp2))/((tmp1.length())*(tmp2.length())));
+		tmp1 = new Euclidean(this.x,this.y,0.0);
+		tmp2 = new Euclidean(o.x,o.y,0.0);
+		planear.z = Math.acos((tmp1.dotProduct(tmp2))/((tmp1.length())*(tmp2.length())));
+//		System.out.println(Math.acos((tmp1.dotProduct(tmp2))/((tmp1.length())*(tmp2.length()))));
+		return planear;
 	}
 	/**
 	 *
@@ -137,7 +149,7 @@ class Euclidean{
 		return (this.x*o.x)+(this.y*o.y)+(this.z*o.z);
 	}
 	Euclidean unitize(){
-		return new Euclidean(x.compareTo(0.0),y.compareTo(0.0),z.compareTo(0.0));
+		return new Euclidean(compare(x,0.0),compare(y,0.0),compare(z,0.0));
 	}
 	static Euclidean average(Collection<Euclidean> c){
 		Euclidean a = new Euclidean(0.0,0.0,0.0);
@@ -152,13 +164,23 @@ class Euclidean{
 		return (isAbout(this.x, o.x) && isAbout(this.y, o.y) && isAbout(this.z,o.z));
 	}
 	private boolean isAbout(Double a, Double b){
-		if ((b+Epsilon)>= a && (b-Epsilon) <= a)
-			return true;
+		Double ub = b+Epsilon;
+		Double lb = b-Epsilon;
+		if ((ub.compareTo(a)>=0) && ((lb.compareTo(a))<=0))
+				return true;
 		return false;
 	}
 	boolean isBoundedBy(Euclidean lb, Euclidean ub){
 		return (isBoundedBy(ub.x, this.x, lb.x) && isBoundedBy(ub.y, this.y, lb.y) 
 				&& isBoundedBy(ub.z, this.z, lb.z));
+	}
+	private int compare(Double a, Double b){
+		int c = a.compareTo(b);
+		if (c == 0)
+			return 0;
+		if (c < 0)
+			return -1;
+		return 1;
 	}
 	private boolean isBoundedBy(double lb, double val, double ub){
 		if (ub < lb){
@@ -175,7 +197,7 @@ class Euclidean{
 			return false;
 		Euclidean other = (Euclidean)o;
 		return (x.equals(other.x)&&y.equals(other.y)&&z.equals(other.z));
-	}
+	} 
 	public int hashCode(){
 		Long bits = Double.doubleToLongBits(x);
 		bits  = bits ^ Double.doubleToLongBits(y);
