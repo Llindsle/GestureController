@@ -52,14 +52,14 @@ class JointRelation{
 	Boolean C;
 	
 	/**Set to the previous appearance of ( JointOne, JointTwo ) */
-//	Integer prev;
+	Integer prev;
 	
 	JointRelation(){
 		J = null;
 		angle = null;
 //		offset = new Euclidean();
 		C = false;
-//		prev = -1;
+		prev = -1;
 		angle = null;
 	}
 	/**
@@ -101,7 +101,7 @@ class JointRelation{
 		//angle = new Euclidean(pointOne).angle(pointTwo);
 		
 		C = conn;
-//		prev = null;
+		prev = null;
 	}
 	/**
 	 * Sets the previous value this is found after the JointOne and JointTwo are know
@@ -111,7 +111,7 @@ class JointRelation{
 	 * @param p : The value to set previous to
 	 */
 	void setPrev(int p){
-//		prev = p;
+		prev = p;
 	}
 	/**
 	 * Determines if two instances have the same Joint locations used for finding the 
@@ -159,7 +159,7 @@ class JointRelation{
 		ret += "{"+(J==null ? "null":J.toString())+" ";
 //		ret += (offset==null ? "null":offset.toString());
 		ret += " A:"+(angle==null ? "null":angle.toString());
-		ret += " C:"+C+"}";//+" P:"+prev+"}";
+		ret += " C:"+C+" P:"+prev+"}";
 		return ret;
 	}
 	public String toXML(){
@@ -169,7 +169,7 @@ class JointRelation{
 //		content += offset.toXML();
 		content += xmlStatics.createElement("angle", angle.toString());
 		content += xmlStatics.createElement("c", C.toString());
-//		content += xmlStatics.createElement("prev", prev.toString());
+		content += xmlStatics.createElement("prev", prev.toString());
 		content +="</"+classTag+">"+'\n';
 		return content;
 	}
