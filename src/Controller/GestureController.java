@@ -578,6 +578,8 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	protected void simplifyGesture(CompressionType type){
 		if (type == CompressionType.NONE) return;
 		
+//		Euclidean.changeEpsilon(Euclidean.getEpsilon()*(-0.5));
+		
 		boolean reduced[] = new boolean[sequence.size()];
 		List<List<JointRelation>> compress = new ArrayList<List<JointRelation>>();
 		List<Vector<Integer>> compIndex = new ArrayList<Vector<Integer>>();
@@ -626,34 +628,34 @@ public class GestureController implements xmlGestureParser<GestureController>{
 //			int j = sequence.size()-1;
 //			for (Vector<Integer> nodeIndex : compIndex){
 			for (i=0;i<compIndex.size();i++){
+				if (debug) System.out.print("X ");
 				reduced = new boolean [size()];
 				Vector<Integer> nodeIndex = compIndex.get(i);
 				List<JointRelation> l = new ArrayList<JointRelation>();
 				JointRelation alpha = average.get(i);
 				
-				//compIndex is still in reverse order so next and previous look odd
-				
-				//add previous nodes
-				//iterate through the nodes in the order that the reverse index
-				//dictates, when one fails then break
-				if (i < compIndex.size()-1){
-					Vector<Integer> prevIndex = compIndex.get(i+1);
-//					List<JointRelation> s = reduce(prevIndex.firstElement(),alpha, reduced);
+				//add prev nodes
+				if (i > 0){
+					Vector<Integer> index = compIndex.get(i-1);
+//					List<JointRelation> s = reduce(nextIndex.lastElement(),alpha, reduced);
 					List<JointRelation> s = new ArrayList<JointRelation>();
-					for (int k=0;k<prevIndex.size();k++){
-						JointRelation beta = sequence.get(prevIndex.get(k)); 
+					for (int k=index.size()-1;k>=0;k--){
+						JointRelation beta = sequence.get(index.get(k)); 
 						if (beta.equalsCoordinates(alpha)){
 							if (s.size() > 1){
-								JointRelation outer = s.get(s.size()-2);
+								JointRelation outer = s.get(0);
 								JointRelation inner = s.get(s.size()-1);
-								if (beta.boundedBy(outer, inner)){
+								if (inner.boundedBy(outer, beta)){
+									if (debug) System.out.print(index.get(k)+" ");
 									s.add(beta);
 								}
 								else
 									break;
 							}
-							else
+							else{
+								if (debug) System.out.print(index.get(k)+" ");
 								s.add(beta);
+							}
 						}
 						else
 							break;
@@ -670,35 +672,45 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				//center so that both ends are still within epsilon of the average
 				//point that is being used to compare.
 				for (Integer k : nodeIndex){
+					if (debug) System.out.print(k+" ");
 					l.add(sequence.get(k));
 				}
-
+				
 				//add next nodes
-				if (i > 0){
-					Vector<Integer> nextIndex = compIndex.get(i-1);
-//					List<JointRelation> s = reduce(nextIndex.lastElement(),alpha, reduced);
+				//iterate through the nodes in the order that the reverse index
+				//dictates, when one fails then break
+				if (i < compIndex.size()-1){
+					Vector<Integer> index = compIndex.get(i+1);
+//					List<JointRelation> s = reduce(prevIndex.firstElement(),alpha, reduced);
 					List<JointRelation> s = new ArrayList<JointRelation>();
-					for (int k=nextIndex.size()-1;k>=0;k--){
-						JointRelation beta = sequence.get(nextIndex.get(k)); 
+					for (int k=0;k<index.size();k++){
+						JointRelation beta = sequence.get(index.get(k)); 
 						if (beta.equalsCoordinates(alpha)){
 							if (s.size() > 1){
-								JointRelation outer = s.get(s.size()-2);
+								JointRelation outer = s.get(0);
 								JointRelation inner = s.get(s.size()-1);
-								if (beta.boundedBy(outer, inner)){
+								if (inner.boundedBy(outer, beta)){
+									if (debug) System.out.print(index.get(k)+" ");
 									s.add(beta);
 								}
 								else
 									break;
 							}
-							else
+							else{
+								if (debug) System.out.print(index.get(k)+" ");
 								s.add(beta);
+							}
 						}
 						else
 							break;
 					}
 					if (!s.isEmpty())
 						l.addAll(s);
+					else{
+						if (debug) System.out.print("E");
+					}
 				}
+
 				compress.add(l);
 			}
 //			for (int j=sequence.size()-1;j>=0;j--){
@@ -719,6 +731,8 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			if (debug) System.out.println("nodes: "+compress.size());
 			average = averageReduction(compress);
 		}
+		
+//		Euclidean.changeEpsilon(Euclidean.getEpsilon()*2);
 		
 		sequence = average;
 
@@ -745,7 +759,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			beta = sequence.get(prev);
 			if (alpha.equalsCoordinates(beta)){
 				if (l.size() > 1){
-					JointRelation outer = l.get(l.size()-2);
+					JointRelation outer = l.get(0);
 					JointRelation inner = l.get(l.size()-1);
 					if (inner.boundedBy(outer, beta)){
 						l.add(beta);

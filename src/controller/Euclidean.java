@@ -12,7 +12,7 @@ import controller.xmlGestureParser.xmlStatics;
  *
  */
 class Euclidean{
-	private static Double Epsilon = 0.025;
+	private static Double Epsilon = 0.01;
 	private static final String classTag = "Euclidean";
 	
 	static final Euclidean ZERO = new Euclidean (0.0,0.0,0.0);
@@ -218,6 +218,9 @@ class Euclidean{
 	}
 	public static Double getEpsilon(){
 		return Epsilon;
+	}
+	public static void changeEpsilon(Double delta){
+		Epsilon += delta;
 	}
 	public String toString(){
 		return "<"+x+", "+y+", "+z+">";
