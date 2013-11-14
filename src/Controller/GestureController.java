@@ -67,7 +67,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	private static BufferedWriter logWriter;
 	
 	/**The Sequence if joint relationships describing the gesture */
-	private Vector<JointRelation> sequence; 
+	private Vector<Vector<JointRelation>> sequence; 
 	
 	/**Name Identifier of the Gesture*/
 	public String Name;
@@ -85,7 +85,8 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	
 	/**Number of completed steps of the gesture */
 	private Integer step; 
-
+	/**Number of phases of a step complete, used for concurrency*/
+	private Integer phase;
 	/**
 	 * Default Constructor:
 	 * Initializes the control arrays and sets step to 0
@@ -107,21 +108,30 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * Used with constructor and may be useful for reseting gesture sequences.
 	 */
 	private void init(){
-		sequence = new Vector<JointRelation>();
+		sequence = new Vector<Vector<JointRelation>>();
 		logWriter = null;
 		step = 0;
 	}
 	public void add(JointRelation j){
-		//Find the last appearance of the given joint pair in the sequence array
-		int loc = -1;
-		for(int i=sequence.size()-1;i>=0;i--){
-			if (j.equalJoints(sequence.get(i))){
-					loc = i;
-					break;
+		if (!sequence.isEmpty()){
+			if (sequence.lastElement().contains(j)){
+				sequence.add(new Vector<JointRelation>());
 			}
 		}
-		j.setPrev(loc); //set the previous location to the one found or -1 if not found
-		sequence.add(j);
+		else{
+			sequence.add(new Vector<JointRelation>());
+		}
+		sequence.lastElement().add(j);
+//		//Find the last appearance of the given joint pair in the sequence array
+//		int loc = -1;
+//		for(int i=sequence.size()-1;i>=0;i--){
+//			if (j.equalJoints(sequence.get(i))){
+//					loc = i;
+//					break;
+//			}
+//		}
+//		j.setPrev(loc); //set the previous location to the one found or -1 if not found
+//		sequence.add(j);
 	}
 	/**
 	 * Adds a joint relationship to the sequence array.
@@ -140,16 +150,16 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		
 		//Create new tmp point using values given
 		JointRelation tmp = new JointRelation(jP, first, second,conn); 
-		
-		//Find the last appearance of the given joint pair in the sequence array
-		for(int i=sequence.size()-1;i>=0;i--){
-			if (tmp.equalJoints(sequence.get(i))){
-					loc = i;
-					break;
-			}
-		}
-		tmp.setPrev(loc); //set the previous location to the one found or -1 if not found
-		sequence.add(tmp); //add to sequence array
+		add(tmp);
+//		//Find the last appearance of the given joint pair in the sequence array
+//		for(int i=sequence.size()-1;i>=0;i--){
+//			if (tmp.equalJoints(sequence.get(i))){
+//					loc = i;
+//					break;
+//			}
+//		}
+//		tmp.setPrev(loc); //set the previous location to the one found or -1 if not found
+//		sequence.add(tmp); //add to sequence array
 	}
 	/**
 	 * This function should be called to check for gesture completion and to update the gesture.
@@ -177,12 +187,12 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			logGesture();
 			return true; //return the successful completion
 		}
-		
+		phase = 0; //set start phase
 		Boolean N = next(context, user);//call next function
 		
 		
 		boolean wait = false; //Used to initiate holding pattern on concurrent gestures
-		int Hold=step; //The holding pattern location for a concurrent gesture
+//		int Hold=step; //The holding pattern location for a concurrent gesture
 		
 		/*
 		 * Checks for concurrent gesture completion, holding, or failure
@@ -190,7 +200,8 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		 * with the current gesture so that there is a non-concurrent gesture between sets of
 		 * concurrent gestures
 		 */
-		while (step > 0 && step < sequence.size() &&sequence.get(step-1).C){
+//		while (step > 0 && step < sequence.size() &&sequence.get(step-1).C){
+		while (phase < sequence.get(step).size()){
 			if (debug) System.out.print("con");
 			/*
 			 * A part hit a holding pattern thus forcing the entire concurrent sequence into
@@ -207,13 +218,14 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				return false; //end the while loop a step failed
 			}
 
+			phase ++;
 			N = next(context, user); //continue to the next part of the gesture
 		}
 		
-		// If any part hit a holding patters reset the concurrent gesture to the first gesture
-		// in the sequence as remembered by Hold
-		if (wait){
-			step = Hold; 
+		//If no part hits a holding pattern or fails then continue to the next 
+		//step of the gesture
+		if (!wait){
+			step ++; 
 		}
 		
 		//The gesture was not finished return false
@@ -235,7 +247,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		if (step == 0)
 			points.add(new PVector());
 		else{
-			pos = sequence.get(step-1).angle.get(sequence.get(step-1).angle.size()-1);
+			pos = sequence.get(step-1).firstElement().angle.get(sequence.get(step-1).firstElement().angle.size()-1);
 			points.add(new PVector(pos.x.floatValue(),pos.y.floatValue(),pos.z.floatValue()));
 		}
 		if (step == size()){
@@ -244,14 +256,14 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		}
 		
 		else{
-			PVector JointOneReal = getRealCoordinites(context,user, sequence.get(step).J.First);
-			PVector JointTwoReal = getRealCoordinites(context,user, sequence.get(step).J.Second);
-			JointRelation rel = compareJointPositions(sequence.get(step).J,JointOneReal, JointTwoReal);
+			PVector JointOneReal = getRealCoordinites(context,user, sequence.get(step).firstElement().J.First);
+			PVector JointTwoReal = getRealCoordinites(context,user, sequence.get(step).firstElement().J.Second);
+			JointRelation rel = compareJointPositions(sequence.get(step).firstElement().J,JointOneReal, JointTwoReal);
 			
 			pos = rel.angle.get(rel.angle.size()-1);
 			points.add(new PVector(pos.x.floatValue(),pos.y.floatValue(),pos.z.floatValue()));
 
-			pos = sequence.get(step).angle.get(sequence.get(step).angle.size()-1);
+			pos = sequence.get(step).firstElement().angle.get(sequence.get(step).firstElement().angle.size()-1);
 			points.add(new PVector(pos.x.floatValue(),pos.y.floatValue(),pos.z.floatValue()));
 		}
 		return false;
@@ -262,12 +274,12 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			logGesture();
 			return true;
 		}
-
+		phase = 0;
 		Boolean N = next(context, tick);//call next function
 		
 		
 		boolean wait = false; //Used to initiate holding pattern on concurrent gestures
-		int Hold=step; //The holding pattern location for a concurrent gesture
+//		int Hold=step; //The holding pattern location for a concurrent gesture
 		
 		/*
 		 * Checks for concurrent gesture completion, holding, or failure
@@ -275,12 +287,8 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		 * with the current gesture so that there is a non-concurrent gesture between sets of
 		 * concurrent gestures
 		 */
-		while (step > 0 && step < sequence.size() &&sequence.get(step-1).C){
-			//Some part of the gesture failed, reset the entire gesture
-			if (N == false){
-				step = 0; //Reset gesture
-				break; //end the while loop a step failed
-			}
+		while (phase < sequence.get(step).size()){
+			if (debug) System.out.print("con");
 			/*
 			 * A part hit a holding pattern thus forcing the entire concurrent sequence into
 			 * a holding pattern but all parts of the concurrent sequence must be checked for
@@ -289,13 +297,21 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			if (N == null){
 				wait = true; //holding pattern true
 			}
-			N = next(context, tick);//continue to the next part of the gesture
+			
+			//Some part of the gesture failed, reset the entire gesture
+			if (N == false){
+				step = 0; //Reset gesture
+				return false; //end the while loop a step failed
+			}
+
+			phase ++;
+			N = next(context, tick); //continue to the next part of the gesture
 		}
 		
 		// If any part hit a holding patters reset the concurrent gesture to the first gesture
 		// in the sequence as remembered by Hold
-		if (wait){
-			step = Hold; 
+		if (!wait){
+			step ++;
 		}
 		
 		return false;
@@ -396,7 +412,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * step in the sequence
 	 */
 	private boolean stepMatch(JointRelation V){
-		JointRelation target = sequence.get(step); //get current step
+		JointRelation target = sequence.get(step).get(phase); //get current step
 		//check for x,y,and z matches against target
 		return target.equalsCoordinates(V);
 	}
@@ -414,25 +430,25 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 */
 	private boolean midMatch(JointRelation V){
 		
-		JointRelation cur = sequence.get(step); //get current step
+		JointRelation cur = sequence.get(step).get(phase); //get current step
 		
 		//First step of joint type
-		if(cur.prev == -1){
+		if(step == 0){
 			return false; //There is no middle ground on the start
 		}
 			
 		//All Other steps
-		JointRelation prev = sequence.get(cur.prev); //get previous of equal joint pair step as denoted by cur.prev
+		JointRelation prev = sequence.get(step-1).get(phase); //get previous of equal joint pair step as denoted by cur.prev
 
 		//check relation between all coordinates return true if all are within range else false
 		boolean range =  V.boundedBy(cur, prev);
 		
 		//check if current position is between the previous point and the one before that, this is possible
 		//in a continuous gesture due to epsilon jumping ahead
-		if (!range && prev.prev != -1){
+		if (!range && step > 1){
 			cur = prev;
-			prev = sequence.get(cur.prev);
-			range = V.boundedBy(cur, prev);
+			prev = sequence.get(step-2).get(phase);
+			range = cur.boundedBy(V, prev);
 		}
 		return range;
 	}
@@ -503,11 +519,11 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		}
 		
 		//Get Joint Positions in converted format
-		PVector JointOneReal = getRealCoordinites(context,user, sequence.get(step).J.First);
-		PVector JointTwoReal = getRealCoordinites(context,user, sequence.get(step).J.Second);
+		PVector JointOneReal = getRealCoordinites(context,user, sequence.get(step).get(phase).J.First);
+		PVector JointTwoReal = getRealCoordinites(context,user, sequence.get(step).get(phase).J.Second);
 
 		//compare each joint locations at each axis
-		JointRelation rel = compareJointPositions(sequence.get(step).J,JointOneReal, JointTwoReal);
+		JointRelation rel = compareJointPositions(sequence.get(step).get(phase).J,JointOneReal, JointTwoReal);
 
 
 		//IF stepMach() Position is exactly what is expected
@@ -532,14 +548,14 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	} 
 	private Boolean next(JointRecorder context, int tick){
 		//Get Joint Positions in converted format
-		PVector JointOneReal = context.getJoint(tick, sequence.get(step).J.First);
-		PVector JointTwoReal = context.getJoint(tick, sequence.get(step).J.Second);
+		PVector JointOneReal = context.getJoint(tick, sequence.get(step).get(phase).J.First);
+		PVector JointTwoReal = context.getJoint(tick, sequence.get(step).get(phase).J.Second);
 
 		if (JointOneReal == null || JointTwoReal == null){
 			return false;
 		}
 		//compare each joint locations at each axis
-		JointRelation rel = compareJointPositions(sequence.get(step).J,JointOneReal, JointTwoReal);
+		JointRelation rel = compareJointPositions(sequence.get(step).get(phase).J,JointOneReal, JointTwoReal);
 		
 		//IF stepMach() Position is exactly what is expected
 		if (stepMatch(rel)){
