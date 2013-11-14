@@ -15,9 +15,11 @@ import controller.xmlGestureParser.xmlStatics;
 class JointRelation{
 	final private String classTag = "p";
 	
-	//These are used to pan through the different types of comparisons
-	//The best choice at current seems to be 0x1, 0x3, 0x7 each increase slightly
-	//more bounded than the previous.
+	/**
+	 * This is used to pan through the different types of comparisons
+	 * The best choice at current seems to be 0x1, 0x3, 0x7 each increase slightly
+	 * more bounded than the previous.
+	 */
 	final static int Interpretation = 0x1;
 	private enum AngleType{
 		//Best
@@ -42,10 +44,11 @@ class JointRelation{
 	}
 	
 	
-	/**J Pair of SimpleOpenNI joints */
+	/**Pair of SimpleOpenNI joints */
 	JointPair J;
 	
 //	Euclidean offset;
+	/** */
 	List<Euclidean> angle;
 	
 	/**Determines if this action is concurrent with the action directly after it */
@@ -54,6 +57,10 @@ class JointRelation{
 	/**Set to the previous appearance of ( JointOne, JointTwo ) */
 	Integer prev;
 	
+	/**
+	 * Default no argument constructor cause this is a handy thing to have, 
+	 * it just sets everything to null or a null like value.
+	 */
 	JointRelation(){
 		J = null;
 		angle = null;
@@ -79,6 +86,8 @@ class JointRelation{
 //		offset.translate(pointOne.inverse());
 //		offset = offset.unitVector();
 		angle = new ArrayList<Euclidean>();
+		
+		//Add all AngleType that are appropriate for Interpretation 
 		if ((AngleType.CROSS_PRODUCT.mask & Interpretation)!= 0)
 			angle.add(pointOne.unitVector().crossProcuct(pointTwo.unitVector()));
 		if ((AngleType.ANGLE_2D.mask & Interpretation)!= 0){

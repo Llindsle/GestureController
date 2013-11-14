@@ -44,18 +44,24 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 *
 	 */
 	public enum CompressionType{
-		//Does not compress the gesture, effectively disabling simplifyGesture
+		/**Does not compress the gesture, effectively disabling simplifyGesture*/
 		NONE,
-		//Groups the raw data into nodes that are within the same Epsilon range
-		//by panning through the list and taking the first non-used value to start
-		//a new node with. Then takes the head of each node as the node value
+		/**
+		 * Groups the raw data into nodes that are within the same Epsilon range
+		 * by panning through the list and taking the first non-used value to start
+		 * a new node with. Then takes the head of each node as the node value
+		 */
 		SIMPLE,
-		//Groups data into Epsilon nodes and then averages across the node to 
-		//get an approximate value for that node
+		/**
+		 * Groups data into Epsilon nodes and then averages across the node to 
+		 * get an approximate value for that node
+		 */
 		AVG,
-		//Groups data into Epsilon nodes then takes average, the average values are 
-		//then used to seed the node sorting process a second time and the average
-		//of the secondary Epsilon nodes created in this way is taken as the value
+		/**
+		 * Groups data into Epsilon nodes then takes average, the average values are 
+		 * then used to seed the node sorting process a second time and the average
+		 * of the secondary Epsilon nodes created in this way is taken as the value
+		 */
 		DBL_AVG};
 		
 	/** Used only to toggle debug output */
@@ -111,6 +117,11 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		logWriter = null;
 		step = 0;
 	}
+	/**
+	 * Adds a joint relation into this, also sets the previous point if there
+	 * exists a previous relation of the same joint pair
+	 * @param j : JointRelation to add
+	 */
 	public void add(JointRelation j){
 		//Find the last appearance of the given joint pair in the sequence array
 		int loc = -1;
@@ -219,12 +230,27 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		//The gesture was not finished return false
 		return false;
 	}
+	/**
+	 * The isComplete function that places the location of the bounds into a PVector
+	 * useful for displaying guided gestures.
+	 * 
+	 * @param context : SimpleOpenNI instance to get current location from
+	 * @param user : user to extract joint information for must have skeleton tracked 
+	 * @param points : PVector to place point location information into
+	 * @return
+	 * 		True if the gesture is complete
+	 * 
+	 * @see GestureController#isComplete(SimpleOpenNI, int)
+	 */
 	public boolean isComplete(SimpleOpenNI context, int user, Vector<PVector> points){
+		//run the regular isComplete function
 		if (isComplete(context, user)){
 			logGesture();
 			return true;
 		}
+		//clear display vector
 		points.clear();
+		
 //		if (step == 0 ||step == size())
 //			return false;
 //		if ((JointRelation.Interpretation & 0x2) == 0)
@@ -232,6 +258,8 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		
 //		points = new Vector<PVector>();
 		Euclidean pos;
+		
+		//Add position data using the last angle type available
 		if (step == 0)
 			points.add(new PVector());
 		else{
@@ -256,6 +284,17 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		}
 		return false;
 	}
+	/**
+	 * Uses a JointRecorder to parse gesture data from this should return the 
+	 * same value that would be returned if the action was done and the data
+	 * was taken directly.
+	 * @param context : JointRecorder to get data from
+	 * @param tick : Tick of context to view
+	 * @return
+	 * 		True if gesture is complete<p>
+	 * 		False otherwise
+	 * @see GestureController#isComplete(SimpleOpenNI, int)
+	 */
 	public boolean isComplete(JointRecorder context, int tick){
 		if (step == size()){
 			step = 0;
@@ -305,7 +344,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			logGesture();
 			return true;
 		}
-		
+		//TODO finish this function, it is just another isComplete function
 		return false;
 	}
 	/**
@@ -369,7 +408,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * @param jointTwo : PVector location representation of n.Second
 	 * @return
 	 * 		JointRelation containing information about the relationship between the joints
-	 * @see JointRelation
+	 * @see JointRelation#equalJoints(JointRelation)
 	 */
 	protected static JointRelation compareJointPositions(JointPair n, PVector jointOne, PVector jointTwo) {
 		//Convert PVector to Euclidean
@@ -530,6 +569,9 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		step = 0; //reset gesture
 		return false;
 	} 
+	/**
+	 * @see #next(SimpleOpenNI, int)
+	 */
 	private Boolean next(JointRecorder context, int tick){
 		//Get Joint Positions in converted format
 		PVector JointOneReal = context.getJoint(tick, sequence.get(step).J.First);
@@ -569,44 +611,64 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		return false;
 	}
 	/**
-	 * Converts a gesture into only discreetly detectable steps, to be used after increasing
-	 * Epsilon. 
+	 * Converts a gesture into only discreetly detectable steps, the method of
+	 * converting is determined by type
 	 * 
 	 * There may be issues with concurrent pieces
 	 * 
+	 * @param type : The type of compression to be used
+	 * @see CompressionType
+	 * 
 	 */
 	protected void simplifyGesture(CompressionType type){
+		//If no compression then return
 		if (type == CompressionType.NONE) return;
 		
 //		Euclidean.changeEpsilon(Euclidean.getEpsilon()*(-0.5));
 		
+		//array to track what elements have been reduced already
 		boolean reduced[] = new boolean[sequence.size()];
+		//list of lists that shows what points are within epsilon of each other
 		List<List<JointRelation>> compress = new ArrayList<List<JointRelation>>();
+		//list of vectors showing the index of the point in the corresponding compress list
 		List<Vector<Integer>> compIndex = new ArrayList<Vector<Integer>>();
+		//vector used to add to compIndex
 		Vector<Integer> localIndex;
 		
 		/* This plays through backwards because if there is multiple sets of focus
 		 * joints in the sequence then it must use previous to determine the relationship
-		 * between the values of sequence
+		 * between the values of sequence and in a move of utter brilliance I though that
+		 * if I could navigate a list in one fashion that it should be a singly linked
+		 * list in reverse.
 		 */
 		for (int i = sequence.size()-1;i>=0;i--){
+			//if the point has not been reduced start compress with it
 			if(!reduced[i]){
 //				compress.add(reduce(i,null,reduced));
 				if (debug) System.out.print("X ");
+				//create new index array for reduce to populate
 				localIndex = new Vector<Integer>();
+				//add the list that is returned from reduce to compress
 				compress.add(reduce(i,reduced, localIndex));
+				//add the index that goes along with the compress list
 				compIndex.add(localIndex);
 			}
 		}
 		
 		if (debug) System.out.println("nodes: "+compress.size());
+		//if the type is simple compression then just take the head of each list
+		//and add it to a new vector of JointRelaitons and replace sequence with
+		//the new vector
 		if (type == CompressionType.SIMPLE){
+			//create a new vector
 			Vector<JointRelation> simple = new Vector<JointRelation>();
-//			for (List<JointRelation> l : compress){
+			
 			//walk the reversed list in reverse for correct direction
 			for (int i=compress.size()-1;i>=0;i--){
-				List<JointRelation> l = compress.get(i);
-				JointRelation head = l.get(0);
+				//get the head of the list
+				JointRelation head = compress.get(i).get(0);
+				
+				//find any previous matches for the JointPair
 				int p = simple.size()-1;
 				for (JointRelation j : simple){
 					if (head.equalJoints(j))
@@ -614,27 +676,47 @@ public class GestureController implements xmlGestureParser<GestureController>{
 					p --;
 				}
 				head.setPrev(p);
+				
+				//add the point to the vector
 				simple.add(head);
 			}
+			//set sequence equal to the simple compression list
 			sequence = simple;
+			//the simple compression has been completed, return
 			return;
 		}
+		
+		//the compression type is at least average so run averageReduction
+		//on the compress list
 		Vector<JointRelation> average = averageReduction(compress);
 		
+		//If the compression is DBL_AVG then there is still more to do
+		//namely use the average values as the alpha values for computing
+		//the list that comprise compress.
 		if (type == CompressionType.DBL_AVG){
 			int i=average.size()-1; //average is now correctly ordered
-			reduced = new boolean [size()];
-			compress.clear();
+			reduced = new boolean [size()]; //reset reduced
+			compress.clear(); //clear the compress array 
+			
 //			int j = sequence.size()-1;
-//			for (Vector<Integer> nodeIndex : compIndex){
+			
+			//for all the vectors in the list of compIndex use the value of
+			//average that corresponded to that compress list to rebuild compress
 			for (i=0;i<compIndex.size();i++){
 				if (debug) System.out.print("X ");
+				
+				//clearing reduce here allows points to be placed into more than
+				//one node.
 				reduced = new boolean [size()];
+				//get the current index
 				Vector<Integer> nodeIndex = compIndex.get(i);
+				//create a new list to add points to 
 				List<JointRelation> l = new ArrayList<JointRelation>();
+				//grab the value from average to use as alpha
 				JointRelation alpha = average.get(i);
 				
-				//add prev nodes
+				//add prev nodes, runs the reduce function in reverse on the node
+				//to see what this is doing go look at reduce()
 				if (i > 0){
 					Vector<Integer> index = compIndex.get(i-1);
 //					List<JointRelation> s = reduce(nextIndex.lastElement(),alpha, reduced);
@@ -710,7 +792,8 @@ public class GestureController implements xmlGestureParser<GestureController>{
 						if (debug) System.out.print("E");
 					}
 				}
-
+				
+				//add the list to compress
 				compress.add(l);
 			}
 //			for (int j=sequence.size()-1;j>=0;j--){
@@ -729,59 +812,98 @@ public class GestureController implements xmlGestureParser<GestureController>{
 //				}
 //			}
 			if (debug) System.out.println("nodes: "+compress.size());
+			
+			//average the compression list
 			average = averageReduction(compress);
 		}
 		
 //		Euclidean.changeEpsilon(Euclidean.getEpsilon()*2);
 		
+		//set sequence to the appropriate average value
 		sequence = average;
 
 	}
+	/**
+	 * Iteratively walk through a vector following the prev link and create a list
+	 * of maximum size of continuous points that are within epsilon of i
+	 * @param i : Index of sequence to begin on
+	 * @param visit : Shows which indexes have been visited
+	 * @param index : An index of the positions in the returned list
+	 * @return
+	 * 		A list of the points that are within epsilon of sequence.get(i)<p>
+	 * 		Null if i is outOfBounds or visit[i] is true
+	 */
 	private List<JointRelation> reduce(int i, boolean visit[], Vector<Integer> index){
-		if (i < 0 || visit[i]){
+		//If i is out of bounds or the point has been visited return null
+		if (i < 0 || i >= size() || visit[i]){
 			index.clear();
 			return null;
 		}
 		
+		//set visit to true so this point is marked as seen
 		visit[i] = true;
 		List<JointRelation> l = new ArrayList<JointRelation>();
 		
+		//clear the index and then add i to it
 		index.clear();
 		index.add(i);
 		
+		//set sequence[i] as alpha to be used for comparison of other points
 		JointRelation alpha = sequence.get(i);
 		JointRelation beta;
+		//get the point that is before alpha
 		Integer prev = alpha.prev;
-		
+		//add alpha to the list
 		l.add(alpha);
 		if (debug) System.out.print(i+" ");
+		//while prev is a valid value
 		while (prev != null && prev > -1){
+			//get beta
 			beta = sequence.get(prev);
+			//compare alpha to beta
 			if (alpha.equalsCoordinates(beta)){
+				//if the size of the list is greater than 1 (2+) then check
+				//that beta fits at the end of the list by checking if the 
+				//beginning of the list and beta bound a middle value that has
+				//already been put into the list, the value that is randomly 
+				//selected is always the end of the list.
 				if (l.size() > 1){
 					JointRelation outer = l.get(0);
 					JointRelation inner = l.get(l.size()-1);
+					//if the bound holds then add beta to the list
 					if (inner.boundedBy(outer, beta)){
 						l.add(beta);
 						index.add(prev);
 					}
+					//beta did not fit within the bounds of the list so it 
+					//does not belong thus the list is finished
 					else
 						return l;
 				}
+				//there was not enough elements to create a bound so add beta
+				//to the list as it was in range
 				else{
 					index.add(prev);
 					l.add(beta);
 				}
 			}
+			//beta was not within epsilon of alpha, the list is finished
 			else
 				return l;
 			
 			if (debug) System.out.print(prev+" ");
+			//mark beta as visited and continue following the prev link through
+			//sequence until it terminates or a point fails to that fails to fit
+			//into the list is found
 			visit[prev] = true;
 			prev = beta.prev;
 		}
 		return l;
 	}
+	/**
+	 * A recursive version of reduce(), the iterative version is less convoluted.
+	 * 	@see #reduce(int, boolean[], Vector)
+	 */
 	private List<JointRelation> reduce(int i,JointRelation alpha, boolean visited[]){
 		if (debug) System.out.print(i+" ");
 		if (i < 0 || visited[i])
@@ -833,6 +955,14 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			l.add(current);
 		return l;
 	}
+	/**
+	 * Averages all the points within the sublists of compress and returns a vector
+	 * of the result
+	 * @param compress : List of lists to average
+	 * @return
+	 * 		Vector<JointRelation> where each element is the average of a sub-list
+	 * of compress.
+	 */
 	private Vector<JointRelation> averageReduction(List<List<JointRelation>> compress){
 
 		/* Basic average of all equal points.
@@ -850,22 +980,25 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		
 		//reverse the reverse for forward direction
 		for (int j=compress.size()-1;j>=0;j--){
+			//get the current sub-list
 			List<JointRelation> l = compress.get(j);
 			
+			//Create a new joint relation and set it up
 			sum = new JointRelation();
 			sum.J = new JointPair(l.get(0).J.First, l.get(0).J.Second);
 			sum.C = false;
 			sum.angle = new ArrayList<Euclidean>();
+			
+			//average each type of angle individually 
 			for (int i=0;i<l.get(0).angle.size();i++){
 				Vector<Euclidean> angle = new Vector<Euclidean>();
 				for (JointRelation p : l){
 					angle.add(p.angle.get(i));
 	//				sum.C = sum.C&p.C; //any false will propagate from here
 				} 
-				
 				sum.angle.add(Euclidean.average(angle));
 			}
-			
+			//find and set the previous point
 			int prev = -1;
 			for (int i=average.size()-1;i>=0;i--){
 				if (average.get(i).equalJoints(sum)){
@@ -874,6 +1007,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				}
 			}
 			sum.setPrev(prev);
+			
 			average.add(sum);
 		}
 		
@@ -905,9 +1039,19 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	public void setDefaultTolerance(){
 		Epsilon = 0.05;
 	}
-	public static Double getTolerance(){
-		return Epsilon;
+	/** 
+	 * @return value of Epsilon
+	 */
+	public static double getTolerance(){
+		return Epsilon.doubleValue();
 	}
+	/**
+	 * Enables logging of gestures upon completion, gestures will be logged
+	 * until {@link #closeLog()} is called.
+	 *  
+	 * @param logFile : String indicating what file should be used for log
+	 * @throws IOException
+	 */
 	public static void enableLog(String logFile) throws IOException{
 		logWriter = new BufferedWriter(new FileWriter(logFile));
 		String content = new String();
@@ -915,6 +1059,13 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		content +="<root>"+'\n';
 		logWriter.write(content);
 	}
+	/**
+	 * Logs a gesture upon completion if log is enabled the gesture format is
+	 * <p> {@literal <gestureCompletion>}
+	 * <p> {@link #Name}
+	 * <p> {@literal <time> current time </time>}
+	 * <p> {@literal </gestureCompletion>}
+	 */
 	private void logGesture(){
 		if (logWriter == null)
 			return;
@@ -922,6 +1073,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		String content = new String();
 		Long time = System.currentTimeMillis();
 		content += "<gestureCompletion>"+'\n';
+		content += Name+'\n';
 		content += xmlStatics.createElement("time", time.toString());
 		content += "</gestureCompletion>"+'\n';
 		try {
@@ -934,6 +1086,11 @@ public class GestureController implements xmlGestureParser<GestureController>{
 //			e.printStackTrace();
 		}
 	}
+	/**
+	 * If log is enabled this closes the log and disables logging untill it is
+	 * re-enabled through {@link #enableLog(String)}
+	 * @throws IOException
+	 */
 	public static void closeLog() throws IOException{
 		if (logWriter == null)
 			return;
@@ -947,9 +1104,16 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		Vector<JointRelation> r = (Vector<JointRelation>) sequence.clone();
 		return r;
 	}
+	/**
+	 * @return
+	 * 		Number of steps that this gesture contains
+	 */
 	public int size(){
 		return sequence.size();
 	}
+	/**
+	 * Clears ALL steps from this gesture
+	 */
 	public void clear(){
 		sequence.clear();
 	}
@@ -982,7 +1146,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		
 		content +="<?xml version=\"1.0\"?>"+'\n';
 		content +="<root>"+'\n';
-		content += xmlStatics.createElement("epsilon",GestureController.getTolerance().toString());
+		content += xmlStatics.createElement("epsilon",Epsilon.toString());
 		xmlGestureParser.xmlStatics.write(wr,content);
 		
 		for(GestureController c : g){
@@ -1032,6 +1196,10 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		
 		return content;
 	}
+	/**
+	 * @return
+	 * 	True if and only if there is no steps to this gesture, false otherwise.
+	 */
 	public boolean isEmpty() {
 		return sequence.isEmpty();
 	}
