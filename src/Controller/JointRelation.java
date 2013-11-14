@@ -51,6 +51,11 @@ class JointRelation{
 	/** */
 	List<Euclidean> angle;
 	
+	/**Describes the AngleType associated with each of the Euclideans stored
+	 * in the angle list
+	 */
+	List<Integer> angleType;
+	
 	/**Determines if this action is concurrent with the action directly after it */
 	Boolean C;
 	
@@ -88,24 +93,29 @@ class JointRelation{
 		angle = new ArrayList<Euclidean>();
 		
 		//Add all AngleType that are appropriate for Interpretation 
-		if ((AngleType.CROSS_PRODUCT.mask & Interpretation)!= 0)
+		if ((AngleType.CROSS_PRODUCT.mask & Interpretation)!= 0){
 			angle.add(pointOne.unitVector().crossProcuct(pointTwo.unitVector()));
+			angleType.add(AngleType.CROSS_PRODUCT.mask);
+		}
 		if ((AngleType.ANGLE_2D.mask & Interpretation)!= 0){
 			Euclidean tmp = pointOne.planarAngle(pointTwo);
 //			tmp.x = 0.0;
 //			tmp.y = 0.0;
 			angle.add(tmp);
+			angleType.add(AngleType.ANGLE_2D.mask);
 		}
 		if ((AngleType.GRID.mask & Interpretation)!= 0){
 			Euclidean tmp = new Euclidean(pointOne);
 			tmp.translate(pointTwo.inverse());
 			angle.add(tmp.unitize());
+			angleType.add(AngleType.GRID.mask);
 		}
 		if ((AngleType.UNIT_VECTOR.mask & Interpretation)!= 0){
 			Euclidean tmp = new Euclidean();
 			tmp = pointOne.unitVector();
 			tmp.translate(pointTwo.unitVector().inverse());
 			angle.add(tmp);
+			angleType.add(AngleType.UNIT_VECTOR.mask);
 		}
 		//angle = new Euclidean(pointOne).angle(pointTwo);
 		
