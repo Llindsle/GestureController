@@ -21,6 +21,7 @@ public class Main extends PApplet{
 	Vector<GestureController> gesture;
 	GestureRecord log;
 	JointRecorder jR;
+	int color = 0;
 
 	public void setup()
 	{	
@@ -108,7 +109,8 @@ public class Main extends PApplet{
 	  // draw depthImageMap
 	  image(context.depthImage(),0,0);
 	  
-
+	  stroke (255-color,0,color);
+	  color = (color+1)%255;
 	  // draw the skeleton if it's available
 	  int[] userList = context.getUsers();
 	  for(int i=0;i<userList.length;i++)
@@ -279,36 +281,37 @@ public class Main extends PApplet{
 				else{
 					GestureController g;
 //					
-					log.record(jR);
-					g = log.generateGesture(CompressionType.NONE);
-					log.clear();
-					gesture.add(g);
-					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-					System.out.println(g);
-					System.out.println("Gesture "+gesture.size()+" generated");
-					
 //					log.record(jR);
-//					g = log.generateGesture(CompressionType.SIMPLE);
+////					System.out.println(log);
+//					g = log.generateGesture(CompressionType.NONE);
 //					log.clear();
 //					gesture.add(g);
 //					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
 //					System.out.println(g);
 //					System.out.println("Gesture "+gesture.size()+" generated");
-//					
+					
 					log.record(jR);
-					g = log.generateGesture(CompressionType.AVG);
-					gesture.add(g);
+					g = log.generateGesture(CompressionType.SIMPLE);
 					log.clear();
-					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-					System.out.println(gesture.lastElement());
-					System.out.println("Gesture "+gesture.size()+" generated");
-//					
-					log.record(jR);
-					g = log.generateGesture(CompressionType.DBL_AVG);
 					gesture.add(g);
 					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
 					System.out.println(g);
 					System.out.println("Gesture "+gesture.size()+" generated");
+//					
+//					log.record(jR);
+//					g = log.generateGesture(CompressionType.AVG);
+//					gesture.add(g);
+//					log.clear();
+//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+//					System.out.println(gesture.lastElement());
+//					System.out.println("Gesture "+gesture.size()+" generated");
+//					
+//					log.record(jR);
+//					g = log.generateGesture(CompressionType.DBL_AVG);
+//					gesture.add(g);
+//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+//					System.out.println(g);
+//					System.out.println("Gesture "+gesture.size()+" generated");
 //					
 //					jR.clear();
 				}

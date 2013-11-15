@@ -69,6 +69,7 @@ class JointRelation{
 	JointRelation(){
 		J = null;
 		angle = null;
+		angleType = null;
 //		offset = new Euclidean();
 //		C = false;
 		prev = null;
@@ -91,6 +92,7 @@ class JointRelation{
 //		offset.translate(pointOne.inverse());
 //		offset = offset.unitVector();
 		angle = new ArrayList<Euclidean>();
+		angleType = new ArrayList<Integer>();
 		
 		//Add all AngleType that are appropriate for Interpretation 
 		if ((AngleType.CROSS_PRODUCT.mask & Interpretation)!= 0){
