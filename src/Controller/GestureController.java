@@ -673,7 +673,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				if (debug) System.out.print("X ");
 				
 				//create new index array for reduce to populate
-				localIndex.clear();
+				localIndex = new Vector<Integer>();
 				
 				//add the list that is returned from reduce to compress
 				compress.add(reduce(i,reduced, localIndex));
@@ -735,6 +735,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		//namely use the average values as the alpha values for computing
 		//the list that comprise compress.
 		if (type == CompressionType.DBL_AVG){
+//			if(debug) System.out.println(compIndex);
 			int i=average.size()-1; //average is now correctly ordered
 			reduced = new boolean [size()]; //reset reduced
 			compress.clear(); //clear the compress array 
@@ -744,6 +745,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			//for all the vectors in the list of compIndex use the value of
 			//average that corresponded to that compress list to rebuild compress
 			for (i=0;i<compIndex.size();i++){
+//				if (debug) System.out.println(compIndex.get(i));
 				if (debug) System.out.print("X ");
 				
 				//clearing reduce here allows points to be placed into more than
@@ -756,31 +758,14 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				//grab the value from average to use as alpha
 				Vector<JointRelation> alpha = average.get(i);
 				
-				boolean br = false;
+//				boolean br = false;
 				
 				//add prev nodes, runs the reduce function in reverse on the node
 				//to see what this is doing go look at reduce()
 				if (i > 0){
 					Vector<Integer> index = compIndex.get(i-1);
 					
-//					List<JointRelation> s = reduce(nextIndex.lastElement(),alpha, reduced);
 					List<Vector<JointRelation>> s = reduce(alpha,index, true);
-//					for (int k=index.size()-1;k>=0;k--){
-//						Vector<JointRelation> beta = sequence.get(index.get(k)); 
-//						for (int j=0;j<beta.size();j++){
-//							if (beta.get(j).equalsCoordinates(alpha.get(j))){
-//								//smoothing goes here
-//							}
-//							else{
-//								br = true;
-//								break;
-//							}
-//						}
-//						if (!br){
-//							if (debug) System.out.print(index.get(k)+" ");
-//							l.add(beta);
-//						}
-//					}
 					if (!s.isEmpty())
 						l.addAll(s);
 				}
@@ -800,63 +785,17 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				//add next nodes
 				//iterate through the nodes in the order that the reverse index
 				//dictates, when one fails then break
-				br = false;
+//				br = false;
 				if (i < compIndex.size()-1){
 					Vector<Integer> index = compIndex.get(i+1);
 					List<Vector<JointRelation>> s = reduce(alpha, index, false);
-//					List<JointRelation> s = new ArrayList<JointRelation>();
-//					for (int k=0;k<index.size();k++){
-//						Vector<JointRelation> beta = sequence.get(index.get(k)); 
-//						for (int j=0;j<beta.size();j++){
-//							if (beta.get(j).equalsCoordinates(alpha.get(j))){
-//	//							if (s.size() > 1){
-//	//								JointRelation outer = s.get(0);
-//	//								JointRelation inner = s.get(s.size()-1);
-//	//								if (inner.boundedBy(outer, beta)){
-//	//									if (debug) System.out.print(index.get(k)+" ");
-//	//									s.add(beta);
-//	//								}
-//	//								else
-//	//									break;
-//	//							}
-//	//							else{
-////									if (debug) System.out.print(index.get(k)+" ");
-////									l.add(beta);
-//	//							}
-//							}
-//							else
-//								break;
-//						}
-//						if (!br){
-//							if (debug) System.out.print(index.get(k)+" ");
-//							l.add(beta);
-//						}
-//					}
 					if (!s.isEmpty())
 						l.addAll(s);
-//					else{
-//						if (debug) System.out.print("E");
-//					}
 				}
 				
 				//add the list to compress
 				compress.add(l);
 			}
-//			for (int j=sequence.size()-1;j>=0;j--){
-//			while (j>=0){
-//				JointRelation r = average.get(i);
-//				if (!reduced[j]){
-//					List<JointRelation> l = reduce(j,r,reduced);
-//					if (l != null)
-//						compress.add(l);
-//					i--;
-//					if (i==-1)
-//						break;
-//				}
-//				else{
-//					j--;
-//				}
-//			}
 			if (debug) System.out.println("nodes: "+compress.size());
 			
 			//average the compression list
@@ -890,11 +829,12 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		int end = rev ? -1 : index.size();
 		boolean br = false;
 		for (int j=start;j != end;j+=inc){
+			if (debug) System.out.print(index.get(j)+" ");
 			beta = new Vector<JointRelation>();
 			for (int k=0;k<gamma.size();k++){
-				beta.add(sequence.get(gamma.get(j).First).get(gamma.get(j).Second));
+				beta.add(sequence.get(index.get(j)).get(gamma.get(k).Second));
 				//compare alpha to beta 
-				if (alpha.get(j).equalsCoordinates(beta.get(j))){
+				if (alpha.get(k).equalsCoordinates(beta.get(k))){
 					//smoothing goes here
 				}
 				else{
@@ -910,7 +850,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			else
 				return l;
 			
-			if (debug) System.out.print(gamma.firstElement().First+" ");
+//			if (debug) System.out.print(gamma.firstElement().First+" ");
 			gamma = new Vector<Pair>();
 			for (JointRelation jR : beta){
 				if (jR.prev == null){
@@ -1031,6 +971,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			//sequence until it terminates or a point fails to that fails to fit
 			//into the list is found
 			visit[gamma.firstElement().First] = true;
+			index.add(gamma.firstElement().First);
 //			prev = gamma.firstElement().prev;
 			gamma = new Vector<Pair>();
 			for (JointRelation jR : beta){

@@ -139,11 +139,13 @@ public class Main extends PApplet{
 	  }    
 	  
 	}
-	private void boringShape(PVector corner){
+	private void boringShape(PVector corner, int v){
 		if (corner.equals(new PVector(0,0,0)))
 			return;
 		float midY = context.depthHeight()/2;
+		midY += (v<2) ? -1*(midY/2) : (midY/2); 
 		float midX = context.depthWidth()/2;
+		midX += (v&1)==0 ? -1*(midX/2) : (midX/2);
 		float radius = GestureController.getTolerance().floatValue()*1000;
 		ellipse(corner.x+midX, corner.y+midY, radius, radius);
 	}
@@ -165,15 +167,15 @@ public class Main extends PApplet{
 //		    		  System.out.println("drawing");
 		    		  stroke(255,0,0);
 		    		  doodle.get(0).mult(-1000);
-		    		  boringShape(doodle.get(0));
+		    		  boringShape(doodle.get(0),j);
 		    		  
 		    		  stroke(0,255,0);
 		    		  doodle.get(1).mult(-1000);
-		    		  boringShape(doodle.get(1));
+		    		  boringShape(doodle.get(1),j);
 		    		  
 		    		  stroke(0,0,255);
 		    		  doodle.get(2).mult(-1000);
-		    		  boringShape(doodle.get(2));
+		    		  boringShape(doodle.get(2),j);
 
 		    	  }
 		      }
@@ -281,22 +283,22 @@ public class Main extends PApplet{
 				else{
 					GestureController g;
 //					
-//					log.record(jR);
-////					System.out.println(log);
-//					g = log.generateGesture(CompressionType.NONE);
-//					log.clear();
-//					gesture.add(g);
-//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-//					System.out.println(g);
-//					System.out.println("Gesture "+gesture.size()+" generated");
+					log.record(jR);
+//					System.out.println(log);
+					g = log.generateGesture(CompressionType.NONE);
+					log.clear();
+					gesture.add(g);
+					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+					System.out.println(g);
+					System.out.println("Gesture "+gesture.size()+" generated");
 					
-//					log.record(jR);
-//					g = log.generateGesture(CompressionType.SIMPLE);
-//					log.clear();
-//					gesture.add(g);
-//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-//					System.out.println(g);
-//					System.out.println("Gesture "+gesture.size()+" generated");
+					log.record(jR);
+					g = log.generateGesture(CompressionType.SIMPLE);
+					log.clear();
+					gesture.add(g);
+					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+					System.out.println(g);
+					System.out.println("Gesture "+gesture.size()+" generated");
 //					
 					log.record(jR);
 					g = log.generateGesture(CompressionType.AVG);

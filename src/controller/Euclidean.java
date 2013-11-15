@@ -1,6 +1,5 @@
 package controller;
 
-import java.util.ArrayList;
 import java.util.Collection;
 
 import controller.xmlGestureParser.xmlStatics;
@@ -12,7 +11,7 @@ import controller.xmlGestureParser.xmlStatics;
  *
  */
 class Euclidean{
-	private static Double Epsilon = 0.01;
+	private static Double Epsilon = 0.015;
 	private static final String classTag = "Euclidean";
 	
 	static final Euclidean ZERO = new Euclidean (0.0,0.0,0.0);
