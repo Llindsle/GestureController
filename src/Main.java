@@ -290,21 +290,21 @@ public class Main extends PApplet{
 //					System.out.println(g);
 //					System.out.println("Gesture "+gesture.size()+" generated");
 					
-					log.record(jR);
-					g = log.generateGesture(CompressionType.SIMPLE);
-					log.clear();
-					gesture.add(g);
-					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-					System.out.println(g);
-					System.out.println("Gesture "+gesture.size()+" generated");
-//					
 //					log.record(jR);
-//					g = log.generateGesture(CompressionType.AVG);
-//					gesture.add(g);
+//					g = log.generateGesture(CompressionType.SIMPLE);
 //					log.clear();
+//					gesture.add(g);
 //					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-//					System.out.println(gesture.lastElement());
+//					System.out.println(g);
 //					System.out.println("Gesture "+gesture.size()+" generated");
+//					
+					log.record(jR);
+					g = log.generateGesture(CompressionType.AVG);
+					gesture.add(g);
+					log.clear();
+					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
+					System.out.println(gesture.lastElement());
+					System.out.println("Gesture "+gesture.size()+" generated");
 //					
 //					log.record(jR);
 //					g = log.generateGesture(CompressionType.DBL_AVG);

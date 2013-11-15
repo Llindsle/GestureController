@@ -689,7 +689,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		//the new vector
 		if (type == CompressionType.SIMPLE){
 			//create a new vector
-			Vector<Vector<JointRelation>> simple = new Vector<Vector<JointRelation>>();
+//			Vector<Vector<JointRelation>> simple = new Vector<Vector<JointRelation>>();
 			sequence = new Vector<Vector<JointRelation>>();
 			link = new HashMap<Pair, Pair>();
 			
@@ -762,39 +762,27 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				//to see what this is doing go look at reduce()
 				if (i > 0){
 					Vector<Integer> index = compIndex.get(i-1);
+					
 //					List<JointRelation> s = reduce(nextIndex.lastElement(),alpha, reduced);
-//					List<Vector<JointRelation>> s = new ArrayList<Vector<JointRelation>>();
-					for (int k=index.size()-1;k>=0;k--){
-						Vector<JointRelation> beta = sequence.get(index.get(k)); 
-						for (int j=0;j<beta.size();j++){
-							if (beta.get(j).equalsCoordinates(alpha.get(j))){
-//								if (s.size() > 1){
-//									JointRelation outer = s.get(0);
-//									JointRelation inner = s.get(s.size()-1);
-//									if (inner.boundedBy(outer, beta)){
-//										if (debug) System.out.print(index.get(k)+" ");
-//										s.add(beta);
-//									}
-//									else
-//										break;
-//								}
-//								else{
-//									if (debug) System.out.print(index.get(k)+" ");
-//									l.add(beta);
-//								}
-							}
-							else{
-								br = true;
-								break;
-							}
-						}
-						if (!br){
-							if (debug) System.out.print(index.get(k)+" ");
-							l.add(beta);
-						}
-					}
-//					if (!s.isEmpty())
-//						l.addAll(s);
+					List<Vector<JointRelation>> s = reduce(alpha,index, true);
+//					for (int k=index.size()-1;k>=0;k--){
+//						Vector<JointRelation> beta = sequence.get(index.get(k)); 
+//						for (int j=0;j<beta.size();j++){
+//							if (beta.get(j).equalsCoordinates(alpha.get(j))){
+//								//smoothing goes here
+//							}
+//							else{
+//								br = true;
+//								break;
+//							}
+//						}
+//						if (!br){
+//							if (debug) System.out.print(index.get(k)+" ");
+//							l.add(beta);
+//						}
+//					}
+					if (!s.isEmpty())
+						l.addAll(s);
 				}
 				
 				//add current node
@@ -815,37 +803,37 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				br = false;
 				if (i < compIndex.size()-1){
 					Vector<Integer> index = compIndex.get(i+1);
-//					List<JointRelation> s = reduce(prevIndex.firstElement(),alpha, reduced);
+					List<Vector<JointRelation>> s = reduce(alpha, index, false);
 //					List<JointRelation> s = new ArrayList<JointRelation>();
-					for (int k=0;k<index.size();k++){
-						Vector<JointRelation> beta = sequence.get(index.get(k)); 
-						for (int j=0;j<beta.size();j++){
-							if (beta.get(j).equalsCoordinates(alpha.get(j))){
-	//							if (s.size() > 1){
-	//								JointRelation outer = s.get(0);
-	//								JointRelation inner = s.get(s.size()-1);
-	//								if (inner.boundedBy(outer, beta)){
-	//									if (debug) System.out.print(index.get(k)+" ");
-	//									s.add(beta);
-	//								}
-	//								else
-	//									break;
-	//							}
-	//							else{
-//									if (debug) System.out.print(index.get(k)+" ");
-//									l.add(beta);
-	//							}
-							}
-							else
-								break;
-						}
-						if (!br){
-							if (debug) System.out.print(index.get(k)+" ");
-							l.add(beta);
-						}
-					}
-//					if (!s.isEmpty())
-//						l.addAll(s);
+//					for (int k=0;k<index.size();k++){
+//						Vector<JointRelation> beta = sequence.get(index.get(k)); 
+//						for (int j=0;j<beta.size();j++){
+//							if (beta.get(j).equalsCoordinates(alpha.get(j))){
+//	//							if (s.size() > 1){
+//	//								JointRelation outer = s.get(0);
+//	//								JointRelation inner = s.get(s.size()-1);
+//	//								if (inner.boundedBy(outer, beta)){
+//	//									if (debug) System.out.print(index.get(k)+" ");
+//	//									s.add(beta);
+//	//								}
+//	//								else
+//	//									break;
+//	//							}
+//	//							else{
+////									if (debug) System.out.print(index.get(k)+" ");
+////									l.add(beta);
+//	//							}
+//							}
+//							else
+//								break;
+//						}
+//						if (!br){
+//							if (debug) System.out.print(index.get(k)+" ");
+//							l.add(beta);
+//						}
+//					}
+					if (!s.isEmpty())
+						l.addAll(s);
 //					else{
 //						if (debug) System.out.print("E");
 //					}
@@ -880,6 +868,63 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		//set sequence to the appropriate average value
 		sequence = average;
 
+	}
+	private List<Vector<JointRelation>> reduce(Vector<JointRelation> alpha, Vector<Integer> index, boolean rev){
+		List<Vector<JointRelation>> l = new ArrayList<Vector<JointRelation>>();
+		Vector<JointRelation> beta;
+		Vector<Pair> gamma = new Vector<Pair>();
+		for (JointRelation jR : alpha){
+			if (jR.prev == null){
+				gamma = null;
+				return l;
+			}
+			if (gamma.size()>0 && jR.prev.First != gamma.lastElement().First){
+				gamma = null;
+				break;
+			}
+			gamma.add(jR.prev);
+		}
+		
+		int inc = rev ? -1 : 1;
+		int start = rev ? index.size()-1 : 0;
+		int end = rev ? -1 : index.size();
+		boolean br = false;
+		for (int j=start;j != end;j+=inc){
+			beta = new Vector<JointRelation>();
+			for (int k=0;k<gamma.size();k++){
+				beta.add(sequence.get(gamma.get(j).First).get(gamma.get(j).Second));
+				//compare alpha to beta 
+				if (alpha.get(j).equalsCoordinates(beta.get(j))){
+					//smoothing goes here
+				}
+				else{
+					br = true;
+					break;
+				}
+			}
+			//all of beta passed so add it to the list
+			if (!br){
+				l.add(beta);
+			}
+			//beta did not pass so return
+			else
+				return l;
+			
+			if (debug) System.out.print(gamma.firstElement().First+" ");
+			gamma = new Vector<Pair>();
+			for (JointRelation jR : beta){
+				if (jR.prev == null){
+					gamma = null;
+					break;
+				}
+				if (gamma.size()>0 && jR.prev.First != gamma.lastElement().First){
+						gamma = null;
+						break;
+				}
+				gamma.add(jR.prev);
+			}
+		}
+		return l;
 	}
 	/**
 	 * Iteratively walk through a vector following the prev link and create a list
@@ -917,8 +962,8 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				break;
 			}
 			if (gamma.size()>0 && jR.prev.First != gamma.lastElement().First){
-					gamma = null;
-					break;
+				gamma = null;
+				break;
 			}
 			gamma.add(jR.prev);
 		}
@@ -1074,61 +1119,93 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		 * Upholds concurrency by equating if there is a terminating
 		 * concurrent condition then the average will be a terminating
 		 * condition.
-		 * 
-		 * concurrent check is not implemented
-		 * 
 		 */
 		Vector<Vector<JointRelation>> average = new Vector<Vector<JointRelation>>();
 		link = new HashMap<Pair, Pair>();
-		JointRelation sum = null;
-//		for (List<JointRelation> l : compress){
 		
-		//reverse the reverse for forward direction
-		for (int k=compress.size()-1;k>=0;k--){
-			//get the current sub-list
-			List<Vector<JointRelation>> l = compress.get(k);
-			average.add(new Vector<JointRelation>());
-			for (int i=0;i<l.get(0).size();i++){
-				
-				//Create a new joint relation and set it up
+		for (int i=compress.size()-1;i>=0;i--){
+			
+			JointRelation sum;
+			List<Vector<JointRelation>> current = compress.get(i);
+			
+			for (int j=0;j<current.get(0).size();j++){
 				sum = new JointRelation();
-				sum.J = new Pair(l.get(0).get(0).J.First, l.get(0).get(0).J.Second);
-				//			sum.C = false;
+				sum.J = current.get(0).get(j).J;
 				sum.angle = new ArrayList<Euclidean>();
-				 Vector<Vector<Euclidean>> angle = new Vector<Vector<Euclidean>>();
+				sum.angleType = current.get(0).get(j).angleType;
 				
-				for (int j=0;j<l.size();j++){
-					JointRelation p = l.get(j).get(i);
-					for (int q=0;q<p.angle.size();q++)
-						angle.get(q).add(p.angle.get(q));
-						//				sum.C = sum.C&p.C; //any false will propagate from here
-					
+				Vector<Vector<Euclidean>> innerAngle = new Vector<Vector<Euclidean>>();
+				for (int k=0;k<current.size();k++){
+					JointRelation jR = current.get(k).get(j);
+					for (int e=0;e<jR.angle.size();e++){
+						if (innerAngle.size()==e)
+							innerAngle.add(new Vector<Euclidean>());
+						innerAngle.get(e).add(jR.angle.get(e));
+					}
 				}
-				for (Vector<Euclidean> v : angle){
+				for (Vector<Euclidean> v : innerAngle){
 					sum.angle.add(Euclidean.average(v));
 				}
-
-//				//average each type of angle individually 
-//				for (int i=0;i<l.get(0).angle.size();i++){
-//
-//				}
-				//find and set the previous point
-//				int prev = -1;
-//				for (int i=average.size()-1;i>=0;i--){
-//					if (average.get(i).equalJoints(sum)){
-//						prev = i;
-//						break;
-//					}
-//				}
-//				sum.setPrev(prev);
-				
 				sum.setPrev(link.get(sum.J));
-				link.put(sum.J, new Pair(k,i));		
+
+				if (average.isEmpty() || link.get(sum.J)!= null && link.get(sum.J).First==average.size()-1)
+					average.add(new Vector<JointRelation>());	
+				
+				average.lastElement().add(sum);
+				link.put(sum.J, new Pair(average.size()-1, average.lastElement().size()-1));
 			}
-			average.lastElement().add(sum);
 		}
-		
 		return average;
+//		JointRelation sum = null;
+////		for (List<JointRelation> l : compress){
+//		
+//		//reverse the reverse for forward direction
+//		for (int k=compress.size()-1;k>=0;k--){
+//			//get the current sub-list
+//			List<Vector<JointRelation>> l = compress.get(k);
+//			average.add(new Vector<JointRelation>());
+//			for (int i=0;i<l.get(0).size();i++){
+//				
+//				//Create a new joint relation and set it up
+//				sum = new JointRelation();
+//				sum.J = new Pair(l.get(0).get(0).J.First, l.get(0).get(0).J.Second);
+//				//			sum.C = false;
+//				sum.angle = new ArrayList<Euclidean>();
+//				 Vector<Vector<Euclidean>> angle = new Vector<Vector<Euclidean>>();
+//				
+//				for (int j=0;j<l.size();j++){
+//					JointRelation p = l.get(j).get(i);
+//					angle.add(new Vector<Euclidean>());
+//					for (int q=0;q<p.angle.size();q++)
+//						angle.get(j).add(p.angle.get(q));
+//						//				sum.C = sum.C&p.C; //any false will propagate from here
+//					
+//				}
+//				for (Vector<Euclidean> v : angle){
+//					sum.angle.add(Euclidean.average(v));
+//				}
+//
+////				//average each type of angle individually 
+////				for (int i=0;i<l.get(0).angle.size();i++){
+////
+////				}
+//				//find and set the previous point
+////				int prev = -1;
+////				for (int i=average.size()-1;i>=0;i--){
+////					if (average.get(i).equalJoints(sum)){
+////						prev = i;
+////						break;
+////					}
+////				}
+////				sum.setPrev(prev);
+//				
+//				sum.setPrev(link.get(sum.J));
+//				link.put(sum.J, new Pair(k,i));		
+//			}
+//			average.lastElement().add(sum);
+//		}
+//		
+//		return average;
 	}
 	/**
 	 * Modifies Epsilon by e, a positive e will make position detection less 
