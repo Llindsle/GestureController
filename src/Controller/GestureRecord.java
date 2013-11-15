@@ -68,7 +68,7 @@ public class GestureRecord extends GestureController{
 	public void record(SimpleOpenNI context, int user){
 		if (!context.isTrackingSkeleton(user))
 			return;
-		int i=0;
+//		int i=0;
 		for (Pair jP : Focus){
 			
 			//get coordinates for both joints
@@ -82,11 +82,11 @@ public class GestureRecord extends GestureController{
 			//compare joints and get relative position
 			JointRelation relative = super.compareJointPositions(jP,jointOne, jointTwo);
 			
-			boolean conn = (i<Focus.size()-1);
-			relative.C = conn;
+//			boolean conn = (i<Focus.size()-1);
+//			relative.C = conn;
 			//add relative coordinates to proper joint pair record vector
 			super.add(relative);
-			i++;
+//			i++;
 		}
 	}
 	/**
@@ -115,7 +115,7 @@ public class GestureRecord extends GestureController{
 		
 		//Add recorded data in range [startTime, endTime)
 		for (int i=startTick;i<endTick;i++){
-			int j=0;
+//			int j=0;
 			for (Pair jP : Focus){
 				//Get Joints from the log at time i
 				PVector jointOne = log.getJoint(i, jP.First);
@@ -125,10 +125,10 @@ public class GestureRecord extends GestureController{
 				JointRelation relative = super.compareJointPositions(jP,jointOne, jointTwo);
 				
 				//Add to the recorder
-				boolean conn = (j<Focus.size()-1);
-				relative.C = conn;
+//				boolean conn = (j<Focus.size()-1);
+//				relative.C = conn;
 				super.add(relative);
-				j++;
+//				j++;
 			}
 		}
 	}

@@ -661,7 +661,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		List<Vector<Integer>> compIndex = new ArrayList<Vector<Integer>>();
 		
 		//vector used to add to compIndex
-		Vector<Integer> localIndex;
+		Vector<Integer> localIndex = new Vector<Integer>();
 		
 		/* This plays through backwards because if there is multiple sets of focus
 		 * joints in the sequence then it must use previous to determine the relationship
@@ -748,39 +748,49 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				//get the current index
 				Vector<Integer> nodeIndex = compIndex.get(i);
 				//create a new list to add points to 
-				List<JointRelation> l = new ArrayList<JointRelation>();
+				List<Vector<JointRelation>> l = new ArrayList<Vector<JointRelation>>();
 				//grab the value from average to use as alpha
-				JointRelation alpha = average.get(i);
+				Vector<JointRelation> alpha = average.get(i);
+				
+				boolean br = false;
 				
 				//add prev nodes, runs the reduce function in reverse on the node
 				//to see what this is doing go look at reduce()
 				if (i > 0){
 					Vector<Integer> index = compIndex.get(i-1);
 //					List<JointRelation> s = reduce(nextIndex.lastElement(),alpha, reduced);
-					List<JointRelation> s = new ArrayList<JointRelation>();
+//					List<Vector<JointRelation>> s = new ArrayList<Vector<JointRelation>>();
 					for (int k=index.size()-1;k>=0;k--){
-						JointRelation beta = sequence.get(index.get(k)); 
-						if (beta.equalsCoordinates(alpha)){
-							if (s.size() > 1){
-								JointRelation outer = s.get(0);
-								JointRelation inner = s.get(s.size()-1);
-								if (inner.boundedBy(outer, beta)){
-									if (debug) System.out.print(index.get(k)+" ");
-									s.add(beta);
-								}
-								else
-									break;
+						Vector<JointRelation> beta = sequence.get(index.get(k)); 
+						for (int j=0;j<beta.size();j++){
+							if (beta.get(j).equalsCoordinates(alpha.get(j))){
+//								if (s.size() > 1){
+//									JointRelation outer = s.get(0);
+//									JointRelation inner = s.get(s.size()-1);
+//									if (inner.boundedBy(outer, beta)){
+//										if (debug) System.out.print(index.get(k)+" ");
+//										s.add(beta);
+//									}
+//									else
+//										break;
+//								}
+//								else{
+//									if (debug) System.out.print(index.get(k)+" ");
+//									l.add(beta);
+//								}
 							}
 							else{
-								if (debug) System.out.print(index.get(k)+" ");
-								s.add(beta);
+								br = true;
+								break;
 							}
 						}
-						else
-							break;
+						if (!br){
+							if (debug) System.out.print(index.get(k)+" ");
+							l.add(beta);
+						}
 					}
-					if (!s.isEmpty())
-						l.addAll(s);
+//					if (!s.isEmpty())
+//						l.addAll(s);
 				}
 				
 				//add current node
@@ -801,33 +811,39 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				if (i < compIndex.size()-1){
 					Vector<Integer> index = compIndex.get(i+1);
 //					List<JointRelation> s = reduce(prevIndex.firstElement(),alpha, reduced);
-					List<JointRelation> s = new ArrayList<JointRelation>();
+//					List<JointRelation> s = new ArrayList<JointRelation>();
 					for (int k=0;k<index.size();k++){
-						JointRelation beta = sequence.get(index.get(k)); 
-						if (beta.equalsCoordinates(alpha)){
-							if (s.size() > 1){
-								JointRelation outer = s.get(0);
-								JointRelation inner = s.get(s.size()-1);
-								if (inner.boundedBy(outer, beta)){
-									if (debug) System.out.print(index.get(k)+" ");
-									s.add(beta);
-								}
-								else
-									break;
+						Vector<JointRelation> beta = sequence.get(index.get(k)); 
+						for (int j=0;j<beta.size();j++){
+							if (beta.get(j).equalsCoordinates(alpha.get(j))){
+	//							if (s.size() > 1){
+	//								JointRelation outer = s.get(0);
+	//								JointRelation inner = s.get(s.size()-1);
+	//								if (inner.boundedBy(outer, beta)){
+	//									if (debug) System.out.print(index.get(k)+" ");
+	//									s.add(beta);
+	//								}
+	//								else
+	//									break;
+	//							}
+	//							else{
+//									if (debug) System.out.print(index.get(k)+" ");
+//									l.add(beta);
+	//							}
 							}
-							else{
-								if (debug) System.out.print(index.get(k)+" ");
-								s.add(beta);
-							}
+							else
+								break;
 						}
-						else
-							break;
+						if (!br){
+							if (debug) System.out.print(index.get(k)+" ");
+							l.add(beta);
+						}
 					}
-					if (!s.isEmpty())
-						l.addAll(s);
-					else{
-						if (debug) System.out.print("E");
-					}
+//					if (!s.isEmpty())
+//						l.addAll(s);
+//					else{
+//						if (debug) System.out.print("E");
+//					}
 				}
 				
 				//add the list to compress
@@ -887,26 +903,37 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		index.add(i);
 		
 		//set sequence[i] as alpha to be used for comparison of other points
-		JointRelation alpha = sequence.get(i).firstElement();
-		JointRelation beta = null;
+		Vector<JointRelation> alpha = sequence.get(i);
+		Vector<JointRelation> beta;
+		Vector<JointRelation> gamma = alpha;
 		//get the point that is before alpha
-		Pair prev = alpha.prev;
+		Pair prev = alpha.firstElement().prev;
 		//add alpha vector to the return list
 		l.add(sequence.get(i));
 		if (debug) System.out.print(i+" ");
 		//while prev is a valid value
 		while (prev != null){
 			//get beta
-			v = new Vector<JointRelation>();
+			beta = new Vector<JointRelation>();
 			boolean br = true; //signals a break
-			for (int j=0;j<sequence.get(prev.First).size();j++){
-				beta = sequence.get(prev.First).get(j);
-				//compare alpha to beta
-				if (alpha.equalsCoordinates(beta)){
+			for (int j=0;j<alpha.size();j++){
+				if (gamma.get(j) == null)
+					continue;
+				
+				prev = gamma.get(j).prev;
+				if (prev == null){
+					beta.add(null);
+					continue;
+				}
+				
+				beta.add(sequence.get(prev.First).get(prev.Second));
+				//compare alpha to beta 
+				if (alpha.get(j).equalsCoordinates(beta.get(j))){
 					//TODO look at re-enabling smoothing
 					//This just smoothing, while things are being reworked this 
 					//is temporarily disabled
-					/*
+					
+/*
 					//if the size of the list is greater than 1 (2+) then check
 					//that beta fits at the end of the list by checking if the 
 					//beginning of the list and beta bound a middle value that has
@@ -924,12 +951,12 @@ public class GestureController implements xmlGestureParser<GestureController>{
 						else
 							return l;
 					}
-					*/
+*/
+					
 					//there was not enough elements to create a bound so add beta
 					//to the list as it was in range
 //					else{
 //						index.add(prev);
-						v.add(beta);
 //					}
 				}
 				else{
@@ -938,8 +965,10 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				}
 			}
 			//all of beta passed so add it to the list
-			if (!br)
-				l.add(v);
+			if (!br){
+				l.add(beta);
+				gamma = beta;
+			}
 			//beta did not pass so return
 			else
 				return l;
@@ -949,7 +978,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 			//sequence until it terminates or a point fails to that fails to fit
 			//into the list is found
 			visit[prev.First] = true;
-			prev = beta.prev;
+			prev = gamma.firstElement().prev;
 		}
 		return l;
 	}
@@ -1110,7 +1139,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	/** 
 	 * @return value of Epsilon
 	 */
-	public static double getTolerance(){
+	public static Double getTolerance(){
 		return Epsilon.doubleValue();
 	}
 	/**
