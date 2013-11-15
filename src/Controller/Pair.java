@@ -14,7 +14,7 @@ import controller.xmlGestureParser.xmlStatics;
  * @author Levi Lindsley
  *
  */
-class JointPair{
+class Pair{
 	final private String classTag = "j";
 	/** First Joint in focus */
 	Integer First;
@@ -27,7 +27,7 @@ class JointPair{
 	 * @param f : Value to initialize First with
 	 * @param s : Value to initialize Second with
 	 */
-	JointPair(int f, int s){
+	Pair(int f, int s){
 		First = new Integer(f);
 		Second = new Integer(s);
 	}
@@ -36,8 +36,8 @@ class JointPair{
 	 */
 	@Override
 	public boolean equals(Object o){
-		if (o instanceof JointPair){
-			return (this.First.equals(((JointPair)o).First) && this.Second.equals(((JointPair)o).Second));
+		if (o instanceof Pair){
+			return (this.First.equals(((Pair)o).First) && this.Second.equals(((Pair)o).Second));
 		}
 		return false;
 	}
@@ -60,7 +60,7 @@ class JointPair{
 	/**
 	 * Creates and xml representation of this with no default leading tabs
 	 * @return String xml representation of this
-	 * @see JointPair#toXML(String)
+	 * @see Pair#toXML(String)
 	 */
 	public String toXML(){
 		String context = new String();

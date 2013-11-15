@@ -23,14 +23,14 @@ public class GestureRecord extends GestureController{
 	private boolean debug = true;
 	
 	/**Pairs of Joints to record relationship between*/
-	private Vector <JointPair> Focus;
+	private Vector <Pair> Focus;
 	
 	/**
 	 * Default Constructor, initializes control vectors
 	 */
 	public GestureRecord(){
 		super();
-		Focus = new Vector<JointPair>();
+		Focus = new Vector<Pair>();
 	}
 	/**
 	 * If there is no recorded data, add a new joint pair to Focus. 
@@ -47,7 +47,7 @@ public class GestureRecord extends GestureController{
 			return false;
 		}
 		//create a new JointPair with specified joints
-		JointPair o = new JointPair(first, second);
+		Pair o = new Pair(first, second);
 		
 		//Focus pairs may not be duplicated
 		if (Focus.contains(o))
@@ -69,7 +69,7 @@ public class GestureRecord extends GestureController{
 		if (!context.isTrackingSkeleton(user))
 			return;
 		int i=0;
-		for (JointPair jP : Focus){
+		for (Pair jP : Focus){
 			
 			//get coordinates for both joints
 			PVector jointOne = super.getRealCoordinites(context, user, jP.First);
@@ -106,7 +106,7 @@ public class GestureRecord extends GestureController{
 			return;
 		}
 		//Checks that all focus points are available in log
-		for (JointPair jP : Focus){
+		for (Pair jP : Focus){
 			if (!(log.contains(jP.First) && log.contains(jP.Second))){
 				System.out.println("Log does not contain all Focus joints, aborting record");
 				return;
@@ -116,7 +116,7 @@ public class GestureRecord extends GestureController{
 		//Add recorded data in range [startTime, endTime)
 		for (int i=startTick;i<endTick;i++){
 			int j=0;
-			for (JointPair jP : Focus){
+			for (Pair jP : Focus){
 				//Get Joints from the log at time i
 				PVector jointOne = log.getJoint(i, jP.First);
 				PVector jointTwo = log.getJoint(i, jP.Second);
@@ -170,8 +170,8 @@ public class GestureRecord extends GestureController{
 	 * @return
 	 * 		Copy of Focus
 	 */
-	public Vector<JointPair> getFocus(){
-		Vector<JointPair> v = new Vector<JointPair>();
+	public Vector<Pair> getFocus(){
+		Vector<Pair> v = new Vector<Pair>();
 		v.addAll(Focus);
 		return v;
 	}
@@ -182,7 +182,7 @@ public class GestureRecord extends GestureController{
 	 */
 	public Set<Integer> getFocusSet(){
 		Set<Integer> s = new TreeSet<Integer>();
-		for (JointPair j : Focus){
+		for (Pair j : Focus){
 			s.add(j.First);
 			s.add(j.Second);
 		}
@@ -206,7 +206,7 @@ public class GestureRecord extends GestureController{
 			return ret;
 		}
 		ret += "Focus Pairs: "+Focus.size();
-		for (JointPair j : Focus){
+		for (Pair j : Focus){
 			ret += j.toString()+'\n';
 		}
 		ret += super.toString();

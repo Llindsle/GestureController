@@ -45,7 +45,7 @@ class JointRelation{
 	
 	
 	/**Pair of SimpleOpenNI joints */
-	JointPair J;
+	Pair J;
 	
 //	Euclidean offset;
 	/** */
@@ -57,10 +57,10 @@ class JointRelation{
 	List<Integer> angleType;
 	
 	/**Determines if this action is concurrent with the action directly after it */
-	Boolean C;
+//	Boolean C;
 	
 	/**Set to the previous appearance of ( JointOne, JointTwo ) */
-	Integer prev;
+	Pair prev;
 	
 	/**
 	 * Default no argument constructor cause this is a handy thing to have, 
@@ -70,8 +70,8 @@ class JointRelation{
 		J = null;
 		angle = null;
 //		offset = new Euclidean();
-		C = false;
-		prev = -1;
+//		C = false;
+		prev = null;
 		angle = null;
 	}
 	/**
@@ -84,7 +84,7 @@ class JointRelation{
 	 * @param conn : 
 	 * Is this concurrent with the next action in sequence, should not be true for last action
 	 */
-	JointRelation(JointPair j,Euclidean pointOne, Euclidean pointTwo, boolean conn){
+	JointRelation(Pair j,Euclidean pointOne, Euclidean pointTwo){
 		J = j;
 		
 //		offset = new Euclidean(pointTwo);
@@ -119,7 +119,7 @@ class JointRelation{
 		}
 		//angle = new Euclidean(pointOne).angle(pointTwo);
 		
-		C = conn;
+//		C = conn;
 		prev = null;
 	}
 	/**
@@ -129,7 +129,7 @@ class JointRelation{
 	 * 
 	 * @param p : The value to set previous to
 	 */
-	void setPrev(int p){
+	void setPrev(Pair p){
 		prev = p;
 	}
 	/**
@@ -173,12 +173,26 @@ class JointRelation{
 		}
 		return lb <= val && val <= ub;
 	}
+	public boolean equals(Object o){
+		if (!(o instanceof JointRelation))
+			return false;
+		
+		JointRelation other = (JointRelation)o;
+		
+		boolean e;
+		e = this.J.equals(other.J);
+		e = e && this.angle.equals(other.angle);
+//		e = e && this.C==other.C;
+		e = e && this.prev.equals(other.prev);
+		return e;
+	}
 	public String toString(){
 		String ret = new String();
 		ret += "{"+(J==null ? "null":J.toString())+" ";
 //		ret += (offset==null ? "null":offset.toString());
 		ret += " A:"+(angle==null ? "null":angle.toString());
-		ret += " C:"+C+" P:"+prev+"}";
+//		ret += " C:"+C;
+		ret += " P:"+prev+"}";
 		return ret;
 	}
 	public String toXML(){
@@ -187,7 +201,7 @@ class JointRelation{
 		content += J.toXML();
 //		content += offset.toXML();
 		content += xmlStatics.createElement("angle", angle.toString());
-		content += xmlStatics.createElement("c", C.toString());
+//		content += xmlStatics.createElement("c", C.toString());
 		content += xmlStatics.createElement("prev", prev.toString());
 		content +="</"+classTag+">"+'\n';
 		return content;

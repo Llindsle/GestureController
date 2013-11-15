@@ -278,7 +278,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	 * @param focus
 	 * @return
 	 */
-	public List<PVector []> playBack(int tick, Vector<JointPair> focus){
+	public List<PVector []> playBack(int tick, Vector<Pair> focus){
 		//TODO implement
 		return null;
 	}
