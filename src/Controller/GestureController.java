@@ -139,7 +139,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 //		}
 		j.setPrev(link.get(j.J));
 
-		if (sequence.isEmpty() || link.get(j.J)!= null && link.get(j.J).First==sequence.size()-1)
+		if (sequence.isEmpty() || (link.get(j.J)!= null && link.get(j.J).First==sequence.size()-1))
 			sequence.add(new Vector<JointRelation>());	
 		
 		sequence.lastElement().add(j);
@@ -817,7 +817,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				gamma = null;
 				return l;
 			}
-			if (gamma.size()>0 && jR.prev.First != gamma.lastElement().First){
+			if (gamma.size()>0 &&  !jR.prev.First.equals(gamma.lastElement().First)){
 				gamma = null;
 				break;
 			}
@@ -831,6 +831,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		for (int j=start;j != end;j+=inc){
 			if (debug) System.out.print(index.get(j)+" ");
 			beta = new Vector<JointRelation>();
+			if (gamma == null) return l;
 			for (int k=0;k<gamma.size();k++){
 				beta.add(sequence.get(index.get(j)).get(gamma.get(k).Second));
 				//compare alpha to beta 
@@ -901,7 +902,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				gamma = null;
 				break;
 			}
-			if (gamma.size()>0 && jR.prev.First != gamma.lastElement().First){
+			if (gamma.size()>0 && !jR.prev.First.equals(gamma.lastElement().First)){
 				gamma = null;
 				break;
 			}
@@ -979,7 +980,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 					gamma = null;
 					break;
 				}
-				if (gamma.size()>0 && jR.prev.First != gamma.lastElement().First){
+				if (gamma.size()>0 &&  !jR.prev.First.equals(gamma.lastElement().First)){
 						gamma = null;
 						break;
 				}
@@ -1089,7 +1090,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 				}
 				sum.setPrev(link.get(sum.J));
 
-				if (average.isEmpty() || link.get(sum.J)!= null && link.get(sum.J).First==average.size()-1)
+				if (average.isEmpty() || (link.get(sum.J)!= null && link.get(sum.J).First==average.size()-1))
 					average.add(new Vector<JointRelation>());	
 				
 				average.lastElement().add(sum);
