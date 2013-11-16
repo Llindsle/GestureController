@@ -358,7 +358,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		
 		return false;
 	}
-	boolean isComplete(JointRelation context){
+	private boolean isComplete(Vector<JointRelation> context){
 		if (step == size()){
 			logGesture();
 			return true;
@@ -1234,10 +1234,106 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		logWriter.close();
 		logWriter = null;
 	}
-	public Vector<JointRelation> getSequence(){
+	public Vector<Vector<JointRelation>> getSequence(){
 		@SuppressWarnings("unchecked") //this is OK, casting back to Vector<JointRelation>
-		Vector<JointRelation> r = (Vector<JointRelation>) sequence.clone();
+		Vector<Vector<JointRelation>> r = (Vector<Vector<JointRelation>>) sequence.clone();
 		return r;
+	}
+	/**
+	 * There is little reason to what I do in this function. Data is being collected
+	 * and will be processed, what gets processed and how it gets processed is yet
+	 * to be worked out.
+	 * 
+	 * @param o
+	 * @return
+	 */
+	public Double comp(GestureController o){
+		//determines if the key set of joints of this is greater or equal
+		//to the key set of o
+		boolean keyFit = this.link.keySet().containsAll(o.link.keySet());
+		
+		//They didn't work at all, return infinity
+		if (!keyFit)
+			return Double.POSITIVE_INFINITY;
+		
+		//Difference in size of the sequences
+		int pointDiff = Math.abs(this.size()-o.size());
+		
+		//see how many times o.sequence matches up with this.sequence if any
+		//and where those matches occur
+		Vector<Integer> strikes = new Vector<Integer>();
+		for (int i=0;i<o.sequence.size();i++){
+			if (this.isComplete(o.sequence.get(i))){
+				strikes.add(o.step);
+			}
+		}
+		
+		//shows where o could be meshed with this, if possible,
+		//-1 values indicate that it is not possible for that element
+		Vector<Integer> insertAfter = new Vector<Integer>();
+		
+		//used to quickly try and guess how the joints of o match up to the 
+		//joint order of this based on how they matched on the previous run
+		//the first pass initializes -1
+		Vector<Pair> temporal = new Vector<Pair>();
+		
+		Pair bound = new Pair(0,0);
+		
+		int min=0;
+		for (int i=0;i<o.size();i++){
+			if (this.size()==0) break;
+			Vector<JointRelation> ins = o.sequence.get(i);
+			for (int j=min;j<this.size()-1;i++){
+				Vector<JointRelation> lb = this.sequence.get(j);
+				Vector<JointRelation> ub = this.sequence.get(j+1);
+				
+				//if the vectors are different sized then they represent different
+				//gestures and don't mesh so don't even try
+				if (ins.size() != lb.size() || ins.size() != ub.size())
+					continue;
+				
+				//assume true then set to false if wrong
+				boolean boundedBy = true;
+				for(int k=0;k<ins.size();k++){
+					JointRelation jR = ins.get(k);
+					
+					//initilize temporal
+					if (temporal.size() == k)
+						temporal.add(new Pair(-1,-1));
+					
+					//search for the matching pairs of joints, using temporal for
+					//a quick check guess
+					bound.First = findPair(jR, lb, temporal.get(k).First);
+					bound.Second = findPair(jR, ub, temporal.get(k).Second);
+					
+					temporal.set(k, bound); //set the temporal guess to the outcome
+					
+					//if the bound fails break
+					if (!jR.boundedBy(lb.get(bound.First), ub.get(bound.Second))){
+						boundedBy = false;
+						break;
+					}	
+				}
+				if (boundedBy){
+					min = j;
+					insertAfter.add(j);
+				}
+				else{
+					insertAfter.add(-1);
+				}
+			}
+		}
+		return  null;
+	}
+	private Integer findPair(JointRelation s, Vector<JointRelation> target, int guess){
+		if (guess >= 0 && guess < target.size())
+			if (target.get(guess).equalJoints(s))
+				return guess;
+		for (int i=0;i<target.size();i++){
+			if (target.get(i).equalJoints(s))
+				return i;
+		}
+		return null;
 	}
 	/**
 	 * @return

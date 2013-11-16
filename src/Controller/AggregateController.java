@@ -1,11 +1,8 @@
 package controller;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Vector;
 
 /**
  * Objective: create a class that aggregates a list of gesture controllers
@@ -56,7 +53,7 @@ public class AggregateController{
 			
 			goodRep = true; 
 		}
-		void addCouncil(GestureController gC){
+		void addMember(GestureController gC){
 			council.add(gC);
 			goodRep = false;
 		}
@@ -84,7 +81,6 @@ public class AggregateController{
 			return best;
 		}
 		private Double vote(GestureController voter, GestureController topic){
-			//returns the fit of voter
 			return null;
 		}
 		
