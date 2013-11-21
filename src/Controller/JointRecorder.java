@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -419,6 +420,12 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 		}
 		context += "</"+classTag+">"+'\n';
 		return context;
+	}
+	@Override
+	public JointRecorder load(Scanner xmlInput) throws UnsupportedOperationException {
+		// TODO Auto-generated method stub
+		UnsupportedOperationException e = new UnsupportedOperationException();
+		throw e;
 	}
 
 }

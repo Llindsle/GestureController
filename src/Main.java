@@ -1,4 +1,8 @@
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
 import java.util.Vector;
 
 import controller.*;
@@ -43,6 +47,16 @@ public class Main extends PApplet{
 	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND);
 	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
 	  
+//	  try{
+//		  Scanner xmlInput = new Scanner(new File("Gesture.xml"));
+//		  GestureController l = new GestureController();
+//		  l = l.load(xmlInput);
+//		  System.out.println(l.toString());
+//	  }catch(Exception e){
+//		  System.err.println(e.getMessage());
+//		  e.printStackTrace();
+//	  }
+	  
 //	  gesture.add(new GestureController("Stir"));
 //	  createStirGesture(gesture.lastElement());
 	  
@@ -75,28 +89,6 @@ public class Main extends PApplet{
 	  size(context.depthWidth(), context.depthHeight()); 
 	  System.out.println("Setup complete");
 	}
-	
-//	void createWaveGesture(GestureController G){
-//		int L_Hand = SimpleOpenNI.SKEL_LEFT_HAND;
-//		int L_Elbow = SimpleOpenNI.SKEL_LEFT_ELBOW;
-//		G.addPoint(L_Elbow, L_Hand, 1, 1, 1, false);
-//		G.addPoint(L_Elbow, L_Hand, 0, 1, 1, false);
-//		G.addPoint(L_Elbow, L_Hand, -1, 1, 1,false);
-//		G.addPoint(L_Elbow, L_Hand, 0,1,1,false);
-//		G.addPoint(L_Elbow, L_Hand, 1,1,1,false);
-//		System.out.println("Wave Gesture Added");
-//	}
-//	void createStirGesture(GestureController G){
-//		int L_Elbow = SimpleOpenNI.SKEL_LEFT_ELBOW;
-//		int L_Shoulder = SimpleOpenNI.SKEL_LEFT_SHOULDER;
-//		//G.addPoint(L_Elbow, L_Hand, 0,0,1,true);
-//		G.addPoint(L_Shoulder, L_Elbow, 0,-1,1,false);
-//		G.addPoint(L_Shoulder, L_Elbow, -1,-1,1,false);
-//		G.addPoint(L_Shoulder, L_Elbow, 0,-1,1,false);
-//		G.addPoint(L_Shoulder, L_Elbow, 1,-1,1,false);
-//		System.out.println("Stir Gesture Added");
-//		
-//	}
 	public void draw()
 	{
 	  // update the cam
@@ -191,7 +183,7 @@ public class Main extends PApplet{
 		System.out.print("Playback mode: ");
 		if(!playback){
 			jR.resetPlayBack();
-			System.out.print("dis-");
+			System.out.print("dis");
 		}
 		System.out.println("engaged");
 	}
@@ -204,7 +196,8 @@ public class Main extends PApplet{
 			return;
 		}
 		for (PVector[] V : points){
-			//not the best use as that third vector go the axe but eh
+			//not the best use as that third vector got the axe but I think that
+			//is how simpleOpenNI draws
 			line (V[0].x, V[0].y, V[1].x, V[1].y);
 		}
 	}

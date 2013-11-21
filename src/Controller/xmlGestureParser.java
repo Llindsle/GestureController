@@ -3,6 +3,7 @@ package controller;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.Scanner;
 
 import processing.core.PVector;
 
@@ -42,6 +43,12 @@ public interface xmlGestureParser<E> {
 			elem += "</"+tag+">"+'\n';
 			return elem;
 		}
+		public static String parseElement(Scanner xmlInput){
+			xmlInput.next();
+			String val = xmlInput.next();
+			xmlInput.next();
+			return val;
+		}
 
 		public static void write(BufferedWriter wr, String s){
 			try {
@@ -55,6 +62,8 @@ public interface xmlGestureParser<E> {
 	}
 	
 	//TODO add load functions
+	
+	E load(Scanner xmlInput) throws UnsupportedOperationException;
 	
 	void save(String fileName, List<E> e);
 	

@@ -1,5 +1,6 @@
 package controller;
 
+import java.util.Scanner;
 import java.util.Vector;
 
 import controller.xmlGestureParser.xmlStatics;
@@ -56,6 +57,22 @@ class Pair{
 	@Override
 	public String toString(){
 		return "<"+First+", "+Second+">";
+	}
+	public static Pair load(Scanner xmlInput){
+		Pair p = new Pair(0,0);
+		String next = xmlInput.next();
+		if (next.compareTo("null")==0)
+			return null;
+		while (next.compareTo("<"+p.classTag+">")!=0){
+			if (!xmlInput.hasNext())
+				return null;
+			next = xmlInput.next();
+		}
+		p.First = Integer.parseInt(xmlStatics.parseElement(xmlInput));
+		p.Second = Integer.parseInt(xmlStatics.parseElement(xmlInput));
+		
+		xmlInput.next();//</classTag>
+		return p;
 	}
 	/**
 	 * Creates and xml representation of this with no default leading tabs

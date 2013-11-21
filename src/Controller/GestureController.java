@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Vector;
 
 import processing.core.PVector;
@@ -257,22 +258,16 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * @see GestureController#isComplete(SimpleOpenNI, int)
 	 */
 	public boolean isComplete(SimpleOpenNI context, int user, Vector<PVector> points){
-//		System.out.println("FUNCTION TEMPORARALY DISABLED.");
-//		
+		
 		//run the regular isComplete function
 		if (isComplete(context, user)){
 			logGesture();
 			return true;
 		}
+		
 		//clear display vector
 		points.clear();
 		
-//		if (step == 0 ||step == size())
-//			return false;
-//		if ((JointRelation.Interpretation & 0x2) == 0)
-//			return false;
-		
-//		points = new Vector<PVector>();
 		Euclidean pos;
 		
 		//Add position data using the last angle type available
@@ -1405,10 +1400,42 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		
 		content +="<?xml version=\"1.0\"?>"+'\n';
 		content +="<root>"+'\n';
-		content +="<epsilon>"+GestureController.getTolerance()+"</epsilon>";
+		content += xmlStatics.createElement("epsilon", Epsilon.toString());
 		content += toXML();
 		content +="</root>"; 
 		xmlStatics.write(wr,content);
+	}
+	public GestureController load(Scanner xmlInput){
+		GestureController gC = new GestureController();
+		String next = xmlInput.next();
+		while (next.compareTo("<"+gC.classTag+">") != 0){
+			if (!xmlInput.hasNext()){
+				if (debug) System.out.println("no classTag");
+				return null;
+			}
+			next = xmlInput.next();
+		}
+		
+		gC.Name = xmlStatics.parseElement(xmlInput);
+		xmlInput.next();
+		gC.sequence.clear();
+
+		next = xmlInput.next();
+		gC.sequence.add(new Vector<JointRelation>());
+		while (xmlInput.hasNext() && next.compareTo("</sequence>")!=0){
+			if (next.compareTo("</step>")==0){
+				next = xmlInput.next();
+				gC.sequence.add(new Vector<JointRelation>());
+				continue;
+			}
+			gC.sequence.lastElement().add(JointRelation.load(xmlInput));
+			next = xmlInput.next();
+		}
+
+		xmlInput.next();//</classTag>
+		
+		if (debug) System.out.println(gC.toString());
+		return gC;
 	}
 	/**
 	 * Returns xml Representation of a gesture.
@@ -1423,10 +1450,13 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		content += xmlStatics.createElement("name", Name);
 		
 		content +="<sequence>"+'\n';
-		for (Vector<JointRelation> v : sequence)
+		for (Vector<JointRelation> v : sequence){
+			content += "<step>"+'\n';
 			for (JointRelation e : v){
 				content += e.toXML();
 			}
+			content += "</step>"+'\n';
+		}
 		content +="</sequence>"+'\n';
 		content +="</"+classTag+">"+'\n';
 		

@@ -2,6 +2,7 @@ package controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 import controller.xmlGestureParser.xmlStatics;
 
@@ -13,6 +14,7 @@ import controller.xmlGestureParser.xmlStatics;
  *
  */
 class JointRelation{
+	private static boolean debug = true;
 	final private String classTag = "p";
 	
 	/**
@@ -197,14 +199,44 @@ class JointRelation{
 		ret += " P:"+prev+"}";
 		return ret;
 	}
+	public static JointRelation load(Scanner xmlInput){
+		JointRelation jR = new JointRelation();
+		String next = xmlInput.next();
+		while (next.compareTo("<"+jR.classTag+">")!=0){
+			if (!xmlInput.hasNext())
+				return null;
+			next = xmlInput.next();
+		}
+		jR.J = Pair.load(xmlInput);
+		
+		next = xmlInput.next();
+		jR.angle = new ArrayList<Euclidean>();
+		//so this only works for a one length angle list but it does work
+			Euclidean e = Euclidean.load(xmlInput);
+			jR.angle.add(e);
+		next = xmlInput.next(); //</angle>
+		if (debug) System.out.println(next);
+		xmlInput.next();//<prev>
+		jR.prev = Pair.load(xmlInput);
+		xmlInput.next();//</prev>
+//		xmlInput.next();//</classTag>
+		return jR;
+	}
 	public String toXML(){
 		String content = new String();
 		content += "<"+classTag+">"+'\n';
 		content += J.toXML();
 //		content += offset.toXML();
-		content += xmlStatics.createElement("angle", angle.toString());
+		content += "<angle>"+'\n';
+		for (Euclidean e: angle){
+			content += e.toXML();
+		}
+		content += "</angle>"+'\n';
 //		content += xmlStatics.createElement("c", C.toString());
-		content += xmlStatics.createElement("prev", prev.toString());
+		if (prev == null)
+			content += xmlStatics.createElement("prev", "null");
+		else
+			content += xmlStatics.createElement("prev", prev.toXML());
 		content +="</"+classTag+">"+'\n';
 		return content;
 	}

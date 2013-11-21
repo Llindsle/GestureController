@@ -1,6 +1,7 @@
 package controller;
 
 import java.util.Collection;
+import java.util.Scanner;
 
 import controller.xmlGestureParser.xmlStatics;
 
@@ -223,6 +224,20 @@ class Euclidean{
 	}
 	public String toString(){
 		return "<"+x+", "+y+", "+z+">";
+	}
+	public static Euclidean load(Scanner xmlInput){
+		Euclidean e = new Euclidean();
+		String next = xmlInput.next();
+		while (next.compareTo("<"+Euclidean.classTag+">")!=0){
+			if (!xmlInput.hasNext())
+				return null;
+			next = xmlInput.next();
+		}
+		e.x = Double.parseDouble(xmlStatics.parseElement(xmlInput));
+		e.y = Double.parseDouble(xmlStatics.parseElement(xmlInput));
+		e.z = Double.parseDouble(xmlStatics.parseElement(xmlInput));
+		xmlInput.next();//</classTag>
+		return e;
 	}
 	public String toXML(){
 		String content = new String();
