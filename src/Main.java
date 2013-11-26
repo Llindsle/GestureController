@@ -1,9 +1,19 @@
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.XMLFormatter;
 
 import controller.*;
 import controller.GestureController.CompressionType;
@@ -38,14 +48,14 @@ public class Main extends PApplet{
 	  jR.addJoint(SimpleOpenNI.SKEL_LEFT_SHOULDER);
 //	  jR.addJoint(SimpleOpenNI.SKEL_RIGHT_HAND);
 //	  jR.addJoint(SimpleOpenNI.SKEL_RIGHT_ELBOW);
-//	  jR.addAll();
+	  jR.addAll();
 	   
 //	  gesture.add(new GestureController("Wave"));
 //	  createWaveGesture(gesture.lastElement());
 	  
 	   
 	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND);
-	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
+//	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
 	  
 //	  try{
 //		  Scanner xmlInput = new Scanner(new File("Gesture.xml"));
@@ -101,7 +111,7 @@ public class Main extends PApplet{
 	  // draw depthImageMap
 	  image(context.depthImage(),0,0);
 	  
-	  stroke (255-color,0,color);
+	  stroke (255,0,color);
 	  color = (color+1)%255;
 	  // draw the skeleton if it's available
 	  int[] userList = context.getUsers();
@@ -314,10 +324,44 @@ public class Main extends PApplet{
 		}
 		if (key == 's'){
 			if(!gesture.isEmpty()){
-				gesture.lastElement().save("Gesture.xml",gesture);
+				LogRecord log = new LogRecord(Level.INFO, gesture.toString()) ;
+				XMLFormatter xF = new XMLFormatter();
+				
+//				FileOutputStream fos;
+				try {
+					BufferedWriter out = new BufferedWriter(new FileWriter("geture.xml"));
+					out.write(xF.format(log));
+					out.flush();
+					out.close();
+//					fos = new FileOutputStream("gesture.tmp");
+//					ObjectOutputStream oos = new ObjectOutputStream(fos);
+//					oos.writeObject(gesture);
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+//			    
+////				gesture.lastElement().save("Gesture.xml",gesture);
 			}
 			//xmlGestureParser.save("Gesture.xml", gesture);
 			//xmlGestureParser.save("Gesture.xml", jR);
+		}
+		if (key == 'l'){
+			gesture.clear();
+			FileInputStream fos;
+			try {
+				fos = new FileInputStream("gesture.tmp");
+				ObjectInputStream oos = new ObjectInputStream(fos);
+				gesture = (Vector<GestureController>) oos.readObject();
+				System.out.println("Gestures Loaded: "+gesture.size());
+				System.out.println(gesture);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} 
 		}
 	}
 

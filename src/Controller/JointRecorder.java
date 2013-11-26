@@ -280,8 +280,12 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	 * @return
 	 */
 	public List<PVector []> playBack(int tick, Vector<Pair> focus){
-		//TODO implement
-		return null;
+		Set<Integer> f = new TreeSet<Integer>();
+		for (Pair p : focus){
+			f.add(p.First);
+			f.add(p.Second);
+		}
+		return playBack(tick,f);
 	}
 	/**
 	 * Retrieves the position of two joints as specified by con1 and con2

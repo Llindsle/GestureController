@@ -1,5 +1,6 @@
 package controller;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Scanner;
 
@@ -11,7 +12,7 @@ import controller.xmlGestureParser.xmlStatics;
  * @author Levi Lindsley
  *
  */
-class Euclidean{
+class Euclidean implements Serializable{
 	private static Double Epsilon = 0.015;
 	private static final String classTag = "Euclidean";
 	

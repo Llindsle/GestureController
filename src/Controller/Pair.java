@@ -1,5 +1,6 @@
 package controller;
 
+import java.io.Serializable;
 import java.util.Scanner;
 import java.util.Vector;
 
@@ -15,7 +16,7 @@ import controller.xmlGestureParser.xmlStatics;
  * @author Levi Lindsley
  *
  */
-class Pair{
+class Pair implements Serializable{
 	final private String classTag = "j";
 	/** First Joint in focus */
 	Integer First;

@@ -1,5 +1,6 @@
 package controller;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -13,7 +14,7 @@ import controller.xmlGestureParser.xmlStatics;
  * @author Levi Lindsley
  *
  */
-class JointRelation{
+class JointRelation implements Serializable{
 	private static boolean debug = true;
 	final private String classTag = "p";
 	

@@ -3,6 +3,7 @@ package controller;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +37,7 @@ import SimpleOpenNI.*;
  * @author Levi Lindsley
  *
  */
-public class GestureController implements xmlGestureParser<GestureController>{
+public class GestureController implements xmlGestureParser<GestureController>, Serializable{
 	/**
 	 * Different types of compression available for use on a gesture
 	 * The compression ranges from least(NONE), to most(DBL_AVG).
