@@ -2,7 +2,7 @@ import processing.core.PApplet;
 import processing.core.*;
 
 
-public class VirtualKitchen extends PApplet {
+public class VirtualKitchen {
 
 float potx, poty, lidx, lidy, spoonx, spoony, knifex, knifey;
 float[] object = new float[2];
@@ -18,10 +18,15 @@ String heldObject = "";
 String location = "";
 boolean rightHand = true;
 int maxUsers = 5;
-
+PApplet parent;
+	
+	VirtualKitchen(PApplet P){
+		parent = P;
+		setup();
+	}
 	public void setup(){
 //		  size(context.depthWidth(), context.depthHeight());
-		  size(500,500);
+		parent.size(500,500);
 		  potx = 100;
 		  poty = 300;
 		  lidx = 300;
@@ -30,27 +35,28 @@ int maxUsers = 5;
 		  spoony = 200;
 		  knifex = 400;
 		  knifey = 400;
-		  textSize(28);
-		  textAlign(CENTER);
+		  parent.textSize(28);
+		  parent.textAlign(parent.CENTER);
 	}
 	public void draw(){
 		PVector projLeftHand = new PVector(-1,-1,-1);
-		PVector projRightHand = new PVector(mouseX,mouseY, 0);
+		PVector projRightHand = new PVector(parent.mouseX,parent.mouseY, 0);
 		int i=0;
 		drawContext(i, projLeftHand, projRightHand);
+//		println("?");
 	}
 	void drawContext(int i, PVector left, PVector right)
 	{
-	  background(0, 255, 0);
+	  parent.background(0, 255, 0);
 
 	  stove();
 	  counter();
 	  light();
 	  chicken(50, 50);
 
-	  fill(0);
+	  parent.fill(0);
 	  String title = "Virtual Kitchen 2.1";
-	  text(title, width/2, height - 50);
+	  parent.text(title, parent.width/2, parent.height - 50);
 
 	  if (holdPot)
 	  {
@@ -82,7 +88,7 @@ int maxUsers = 5;
 	      {
 	        heldObject = "covered pot";
 	      }
-	      println("  ACTION: Pick up " + heldObject);
+	      parent.println("  ACTION: Pick up " + heldObject);
 	      pause = 0;
 	    }
 	    else if ( left.x < potx && left.x > potx-75 && left.y < poty && left.y > poty-10 &&
@@ -96,7 +102,7 @@ int maxUsers = 5;
 	      {
 	        heldObject = "covered pot";
 	      }
-	      println("  ACTION: Pick up " + heldObject);
+	      parent.println("  ACTION: Pick up " + heldObject);
 	      pause = 0;
 	    }
 	  }
@@ -120,7 +126,7 @@ int maxUsers = 5;
 	      somethingInHand = true;
 	      pause = 0;
 	      heldObject = "spoon";
-	      println("  ACTION: Pick up " + heldObject);
+	      parent.println("  ACTION: Pick up " + heldObject);
 	    }
 	    else if (left.x > spoonx && left.x < spoonx+10 && left.y > spoony && left.y < spoony + 50 &&
 	      !somethingInHand && pause > pauseTimer)
@@ -130,7 +136,7 @@ int maxUsers = 5;
 	      somethingInHand = true;
 	      pause = 0;
 	      heldObject = "spoon";
-	      println("  ACTION: Pick up " + heldObject);
+	      parent.println("  ACTION: Pick up " + heldObject);
 	    }
 	  }
 
@@ -153,7 +159,7 @@ int maxUsers = 5;
 	      somethingInHand = true;
 	      pause = 0;
 	      heldObject = "knife";
-	      println("  ACTION: Pick up " + heldObject);
+	      parent.println("  ACTION: Pick up " + heldObject);
 	    }
 	    else if (left.x > knifex && left.x < knifex+40 && left.y > knifey && left.y < knifey + 10 &&
 	      !somethingInHand && pause > pauseTimer)
@@ -163,7 +169,7 @@ int maxUsers = 5;
 	      somethingInHand = true;
 	      pause = 0;
 	      heldObject = "knife";
-	      println("  ACTION: Pick up " + heldObject);
+	      parent.println("  ACTION: Pick up " + heldObject);
 	    }
 	  }
 
@@ -187,7 +193,7 @@ int maxUsers = 5;
 	      lidOnPot = false;
 	      pause = 0;
 	      heldObject = "lid";
-	      println("  ACTION: Pick up " + heldObject);
+	      parent.println("  ACTION: Pick up " + heldObject);
 	    }
 	    else if (left.x > lidx-10 && left.x < lidx+10 && left.y > lidy-20 && left.y < lidy &&
 	      !somethingInHand && pause > pauseTimer)
@@ -198,7 +204,7 @@ int maxUsers = 5;
 	      lidOnPot = false;
 	      pause = 0;
 	      heldObject = "lid";
-	      println("  ACTION: Pick up " + heldObject);
+	      parent.println("  ACTION: Pick up " + heldObject);
 	    }
 	  }
 
@@ -211,7 +217,7 @@ int maxUsers = 5;
 
 	  location = "screen";
 	  //set objects down on mouseclick
-	  if(mousePressed && somethingInHand)
+	  if(parent.mousePressed && somethingInHand)
 	  {
 	    holdPot = false;
 	    holdLid = false;
@@ -219,27 +225,27 @@ int maxUsers = 5;
 	    holdKnife = false;
 	    somethingInHand = false;
 	    pause = 0;
-	    println("  ACTION: Set down " + heldObject + " on " + location);
+	    parent.println("  ACTION: Set down " + heldObject + " on " + location);
 	  }
 	}
 
 	void dropObject()
 	{
-	  if ((object[0] >= 0 && object[0] <= 200) || (object[0] >= width - 150 && object[0] <= width))
+	  if ((object[0] >= 0 && object[0] <= 200) || (object[0] >= parent.width - 150 && object[0] <= parent.width))
 	  {
 	    if (object[0] >= 0 && object[0] <= 200)
 	      location = "counter";
-	    if (object[0] >= width - 150 && object[0] <= width)
+	    if (object[0] >= parent.width - 150 && object[0] <= parent.width)
 	      location = "stove";
 
-	    if (object[1] >= 2*height/3 && object[1] <= 2*height/3 + 10)
+	    if (object[1] >= 2*parent.height/3 && object[1] <= 2*parent.height/3 + 10)
 	    {
 	      holdPot = false;
 	      holdSpoon = false;
 	      holdLid = false;
 	      holdKnife = false;
 	      somethingInHand = false;
-	      println("  ACTION: Set down " + heldObject + " on " + location);
+	      parent.println("  ACTION: Set down " + heldObject + " on " + location);
 
 	      pause = 0;
 	    }
@@ -255,7 +261,7 @@ int maxUsers = 5;
 	        somethingInHand = false;
 	        pause = 0;
 	        lid(potx+50, poty-10);
-	        println("GESTURE: Cover Pot");
+	        parent.println("GESTURE: Cover Pot");
 	      }
 	    }
 	  }
@@ -265,9 +271,9 @@ int maxUsers = 5;
 	{
 	  knifex = x;
 	  knifey = y;
-	  fill(0);
-	  rect(x, y, 40, 10);
-	  triangle(x+40, y, x+120, y, x+40, y+30);
+	  parent.fill(0);
+	  parent.rect(x, y, 40, 10);
+	  parent.triangle(x+40, y, x+120, y, x+40, y+30);
 	}
 
 	float[] getBottomOfKnife()
@@ -282,9 +288,9 @@ int maxUsers = 5;
 	{
 	  lidx = x;
 	  lidy = y;
-	  fill(0);
-	  arc(x, y+10, 100, 40, PI, TWO_PI);
-	  ellipse(x, y-10, 20, 20);
+	  parent.fill(0);
+	  parent.arc(x, y+10, 100, 40, parent.PI, parent.TWO_PI);
+	  parent.ellipse(x, y-10, 20, 20);
 	}
 
 	float[] getBottomOfLid()
@@ -299,16 +305,16 @@ int maxUsers = 5;
 	{
 	  potx = x;
 	  poty = y;
-	  fill(0);
+	  parent.fill(0);
 	  //main part of pot
-	  rect(x, y, 100, 50);
+	  parent.rect(x, y, 100, 50);
 	  //bottom of pot
-	  ellipse(x+50, y+50, 100, 20);
+	  parent.ellipse(x+50, y+50, 100, 20);
 	  //handle
-	  quad(x, y, x, y+10, x-75, y+10, x-75, y);
-	  fill(200);
+	  parent.quad(x, y, x, y+10, x-75, y+10, x-75, y);
+	  parent.fill(200);
 	  //top of pot
-	  ellipse(x+50, y, 100, 20);
+	  parent.ellipse(x+50, y, 100, 20);
 	}
 
 	float[] getBottomOfPot()
@@ -323,9 +329,9 @@ int maxUsers = 5;
 	{
 	  spoonx = x;
 	  spoony = y;
-	  fill(0);
-	  rect(x, y, 10, 50);
-	  ellipse(x+5, y+50, 20, 30);
+	  parent.fill(0);
+	  parent.rect(x, y, 10, 50);
+	  parent.ellipse(x+5, y+50, 20, 30);
 	}
 
 	float[] getBottomOfSpoon()
@@ -338,74 +344,76 @@ int maxUsers = 5;
 
 	void stove()
 	{
-	  fill(150);
-	  textSize(16);
-	  rect(width, height, -150, -height/3);
-	  fill(0);
-	  text("Stove", width-75, height-height/3/2);
+	  parent.fill(150);
+	  parent.textSize(16);
+	  parent.rect(parent.width, parent.height, -150, -parent.height/3);
+	  parent.fill(0);
+	  parent.text("Stove", parent.width-75, parent.height-parent.height/3/2);
 
-	  fill(255, 0, 0);
-	  beginShape();
-	  vertex(width-75, height-height/3);
-	  vertex(width-60, height-height/3-5);
-	  vertex(width-55, height-height/3-30);
-	  vertex(width-67, height-height/3-15);
-	  vertex(width-75, height-height/3-30);
-	  vertex(width-82, height-height/3-15);
-	  vertex(width-95, height-height/3-30);
-	  vertex(width-90, height-height/3-5);
-	  endShape(CLOSE);
-	  textSize(32);
+	  parent.fill(255, 0, 0);
+	  parent.beginShape();
+	  parent.vertex(parent.width-75, parent.height-parent.height/3);
+	  parent.vertex(parent.width-60, parent.height-parent.height/3-5);
+	  parent.vertex(parent.width-55, parent.height-parent.height/3-30);
+	  parent.vertex(parent.width-67, parent.height-parent.height/3-15);
+	  parent.vertex(parent.width-75, parent.height-parent.height/3-30);
+	  parent.vertex(parent.width-82, parent.height-parent.height/3-15);
+	  parent.vertex(parent.width-95, parent.height-parent.height/3-30);
+	  parent.vertex(parent.width-90, parent.height-parent.height/3-5);
+	  parent.endShape(parent.CLOSE);
+	  parent.textSize(32);
 	}
 
 	void counter()
 	{
-	  fill(200);
-	  textSize(16);
-	  rect(0, height, 200, -height/3);
-	  fill(0);
-	  text("Counter", 100, height-height/3/2);
+	  parent.fill(200);
+	  parent.textSize(16);
+	  parent.rect(0, parent.height, 200, -parent.height/3);
+	  parent.fill(0);
+	  parent.text("Counter", 100, parent.height-parent.height/3/2);
 
-	  textSize(32);
+	  parent.textSize(32);
 	}
 
 	void light()
 	{
-	  fill(0);
-	  rect(width/2-5, 0, 10, 100);
-	  fill(255, 255, 0);
-	  ellipse(width/2, 100, 30, 30);
+		parent.fill(0);
+		parent.rect(parent.width/2-5, 0, 10, 100);
+		parent.fill(255, 255, 0);
+		parent.ellipse(parent.width/2, 100, 30, 30);
 
-	  fill(0);
-	  arc(width/2, 100, 120, 50, PI, TWO_PI);
+		parent.fill(0);
+		parent.arc(parent.width/2, 100, 120, 50, parent.PI, parent.TWO_PI);
 	}
 
 	void chicken(float x, float y)
 	{
-	  pushMatrix();
-	  scale((float) .5);
-	  translate(x, y);
+		parent.pushMatrix();
+		parent.scale((float) .5);
+		parent.translate(x, y);
 
-	  noFill();
-	  stroke(0);
-	  strokeWeight(10);
-	  rect(-20, -20, 130, 130);
+		parent.noFill();
+		parent.stroke(0);
+	  parent.strokeWeight(10);
+	  parent.rect(-20, -20, 130, 130);
 
-	  noStroke();
+	  parent.noStroke();
 
-	  fill(255, 197, 3);
-	  ellipse(70, 10, 45, 45); // head
-	  ellipse(25, 32, 70, 70); // body
-	  fill(0);
-	  ellipse(73, 7, 12, 12); // left eye
-	  fill(255, 95, 3);
-	  triangle(90, 10, 110, 23, 85, 26);
-	  rect(20, 65, 8, 35); // left leg
-	  rect(30, 65, 6, 30); // right leg
-	  fill(255, 175, 0);
-	  rect(20, 10, 40, 40); // left arm
-	  strokeWeight(2);
-	  popMatrix();
+	  parent.fill(255, 197, 3);
+	  parent.ellipse(70, 10, 45, 45); // head
+	  parent.ellipse(25, 32, 70, 70); // body
+	  parent.fill(0);
+	  parent.ellipse(73, 7, 12, 12); // left eye
+	  parent.fill(255, 95, 3);
+	  parent.triangle(90, 10, 110, 23, 85, 26);
+	  parent.rect(20, 65, 8, 35); // left leg
+	  parent.rect(30, 65, 6, 30); // right leg
+	  parent. fill(255, 175, 0);
+	  parent.rect(20, 10, 40, 40); // left arm
+	  parent.strokeWeight(2);
+	  parent.popMatrix();
 	}
-
+	public static void main(String[] args){
+		PApplet.main(new String[] { "--present", "VirtualKitchen" });
+	}
 }
