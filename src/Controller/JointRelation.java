@@ -16,7 +16,8 @@ import controller.xmlGestureParser.xmlStatics;
  */
 class JointRelation implements Serializable{
 	private static boolean debug = true;
-	final private String classTag = "p";
+	private static double masterScale=100;
+	final private String classTag = "jR";
 	
 	/**
 	 * This is used to pan through the different types of comparisons
@@ -90,22 +91,22 @@ class JointRelation implements Serializable{
 	 */
 	JointRelation(Pair j,Euclidean pointOne, Euclidean pointTwo){
 		J = j;
-		
-//		offset = new Euclidean(pointTwo);
-//		offset.translate(pointOne.inverse());
-//		offset = offset.unitVector();
+		setAngle(pointOne,pointTwo);
+		prev = null;
+	}
+	void setAngle(Euclidean pointOne, Euclidean pointTwo){
 		angle = new ArrayList<Euclidean>();
 		angleType = new ArrayList<Integer>();
 		
 		//Add all AngleType that are appropriate for Interpretation 
 		if ((AngleType.CROSS_PRODUCT.mask & Interpretation)!= 0){
-			angle.add(pointOne.unitVector().crossProcuct(pointTwo.unitVector()));
+			Euclidean tmp = (pointOne.unitVector().crossProcuct(pointTwo.unitVector()));
+			tmp.scale(masterScale);
+			angle.add(tmp);
 			angleType.add(AngleType.CROSS_PRODUCT.mask);
 		}
 		if ((AngleType.ANGLE_2D.mask & Interpretation)!= 0){
 			Euclidean tmp = pointOne.planarAngle(pointTwo);
-//			tmp.x = 0.0;
-//			tmp.y = 0.0;
 			angle.add(tmp);
 			angleType.add(AngleType.ANGLE_2D.mask);
 		}
@@ -119,13 +120,10 @@ class JointRelation implements Serializable{
 			Euclidean tmp = new Euclidean();
 			tmp = pointOne.unitVector();
 			tmp.translate(pointTwo.unitVector().inverse());
+//			tmp.scale(masterScale);
 			angle.add(tmp);
 			angleType.add(AngleType.UNIT_VECTOR.mask);
 		}
-		//angle = new Euclidean(pointOne).angle(pointTwo);
-		
-//		C = conn;
-		prev = null;
 	}
 	/**
 	 * Sets the previous value this is found after the JointOne and JointTwo are know

@@ -17,7 +17,7 @@ import controller.xmlGestureParser.xmlStatics;
  *
  */
 class Pair implements Serializable{
-	final private String classTag = "j";
+	final private String classTag = "pair";
 	/** First Joint in focus */
 	Integer First;
 	

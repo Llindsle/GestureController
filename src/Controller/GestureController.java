@@ -6,9 +6,12 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.Vector;
 
 import processing.core.PVector;
@@ -74,10 +77,14 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 	
 	final private String classTag = "gesture";
 	
+	/** Used to enable/disable logging completion of a gesture*/
 	private static BufferedWriter logWriter;
 	
-	/**The Sequence if joint relationships describing the gesture */
+	/**The Sequence of joint relationships describing the gesture */
 	private Vector<Vector<JointRelation>> sequence; 
+	//TODO Move this to a local variable in the few spots it is requred
+	/**The links between the diffrent levels of sequence, only used for generating
+	 * sequence and should be moved to a local variable later if possible */
 	private Map<Pair, Pair> link;
 	
 	/**Name Identifier of the Gesture*/
@@ -158,22 +165,11 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 	 * 	 NOTE: should be false for last gesture
 	 */
 	public void addPoint(Pair jP, Euclidean first, Euclidean second){
-//		int loc=-1;
-		
 		
 		//Create new tmp point using values given
 		JointRelation tmp = new JointRelation(jP, first, second);
+		if (debug) System.out.println(tmp);
 		add(tmp);
-		
-//		//Find the last appearance of the given joint pair in the sequence array
-//		for(int i=sequence.size()-1;i>=0;i--){
-//			if (tmp.equalJoints(sequence.get(i))){
-//					loc = i;
-//					break;
-//			}
-//		}
-//		tmp.setPrev(loc); //set the previous location to the one found or -1 if not found
-//		sequence.add(tmp); //add to sequence array
 	}
 	/**
 	 * This function should be called to check for gesture completion and to update the gesture.
@@ -316,7 +312,6 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 //		phase = 0;
 		Boolean N =true;//call next function
 		boolean wait = false; //Used to initiate holding pattern on concurrent gestures
-		int Hold=step; //The holding pattern location for a concurrent gesture
 		
 		/*
 		 * Checks for concurrent gesture completion, holding, or failure
@@ -503,6 +498,7 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 	 * 		True if val is between cur and prev 
 	 * @see JointRelation#chkBounds(double, double, double)
 	 */
+	@SuppressWarnings("unused")
 	private boolean chkCoord(int cur, int val, int prev){
 		//if the current > previous then check them in (prev <= val <= cur) 
 		//else check (cur <= val <= prev) order
@@ -538,8 +534,9 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 		
 		//convert data into projective data this seems more useful for comparison
 		//the raw data may work just as well though not sure so I use this
-		c.convertRealWorldToProjective(Joint, Real);
-		return Real;
+//		c.convertRealWorldToProjective(Joint, Real);
+//		return Real;
+		return Joint;
 	}
 	/**
 	 * Checks the next step to see if the skeletal model derived from context matches the expected
@@ -1149,21 +1146,12 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 	 * Modifies Epsilon by e, a positive e will make position detection less 
 	 * sensitive and a negative e will make detection more sensitive.
 	 * 
-	 * Epsilon is bounded below by 0 and above by 90 (0<=Epsilon<=90)
 	 * 
 	 * @param delta : change of Epsilon
 	 */
-	public void changeTolerance(int delta){
-		//TODO fix bounds of epsilon
-		Epsilon += delta;
-		
-		//Minimum Epsilon = 0
-		if (Epsilon < 0)
-			Epsilon = .0;
-		
-		//Maximum Epsilon = 90
-		if (Epsilon > 90)
-			Epsilon = 90.0;
+	public void changeTolerance(double delta){
+		Euclidean.changeEpsilon(delta);
+		Epsilon = Euclidean.getEpsilon();
 	} 
 	/**
 	 * Resets Epsilon to default value of 0.05
@@ -1184,15 +1172,20 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 	 * @param logFile : String indicating what file should be used for log
 	 * @throws IOException
 	 */
-	public static void enableLog(String logFile) throws IOException{
+	public static void enableLog(String logFile){
+		try{
 		logWriter = new BufferedWriter(new FileWriter(logFile));
 		String content = new String();
 		content +="<?xml version=\"1.0\"?>"+'\n';
 		content +="<root>"+'\n';
 		logWriter.write(content);
+		}catch(IOException e){
+			System.err.println(e.getLocalizedMessage());
+			System.err.println("Log file "+logFile+" failed to open");
+		}
 	}
 	/**
-	 * Logs a gesture upon completion if log is enabled the gesture format is
+	 * Logs a gesture upon completion if log is enabled the log format is
 	 * <p> {@literal <gestureCompletion>}
 	 * <p> {@link #Name}
 	 * <p> {@literal <time> current time </time>}
@@ -1212,10 +1205,10 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 			logWriter.write(content);
 			logWriter.flush();
 		} catch (IOException e) {
+			System.err.println(e.getLocalizedMessage());
 			System.err.println("Gesture failed to log."+'\n'+"Gesture: "+Name+
 					'\n'+"Time: "+System.currentTimeMillis()+'\n'+"logWriter reset");
 			logWriter = null;
-//			e.printStackTrace();
 		}
 	}
 	/**
@@ -1245,6 +1238,8 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 	 * @return
 	 */
 	public Double comp(GestureController o){
+		//TODO make this function return something
+		
 		//determines if the key set of joints of this is greater or equal
 		//to the key set of o
 		boolean keyFit = this.link.keySet().containsAll(o.link.keySet());
@@ -1267,15 +1262,22 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 		
 		//shows where o could be meshed with this, if possible,
 		//-1 values indicate that it is not possible for that element
-		Vector<Integer> insertAfter = new Vector<Integer>();
+		Vector<Integer> insertAfter = mesh(o);
 		
+		return  null;
+	}
+	private Vector<Integer> mesh(GestureController o){
+		//shows where o could be meshed with this, if possible,
+		//-1 values indicate that it is not possible for that element
+		Vector<Integer> insertAfter = new Vector<Integer>();
+
 		//used to quickly try and guess how the joints of o match up to the 
 		//joint order of this based on how they matched on the previous run
 		//the first pass initializes -1
 		Vector<Pair> temporal = new Vector<Pair>();
-		
+
 		Pair bound = new Pair(0,0);
-		
+
 		int min=0;
 		for (int i=0;i<o.size();i++){
 			if (this.size()==0) break;
@@ -1283,28 +1285,28 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 			for (int j=min;j<this.size()-1;i++){
 				Vector<JointRelation> lb = this.sequence.get(j);
 				Vector<JointRelation> ub = this.sequence.get(j+1);
-				
+
 				//if the vectors are different sized then they represent different
 				//gestures and don't mesh so don't even try
 				if (ins.size() != lb.size() || ins.size() != ub.size())
 					continue;
-				
+
 				//assume true then set to false if wrong
 				boolean boundedBy = true;
 				for(int k=0;k<ins.size();k++){
 					JointRelation jR = ins.get(k);
-					
+
 					//initilize temporal
 					if (temporal.size() == k)
 						temporal.add(new Pair(-1,-1));
-					
+
 					//search for the matching pairs of joints, using temporal for
 					//a quick check guess
 					bound.First = findPair(jR, lb, temporal.get(k).First);
 					bound.Second = findPair(jR, ub, temporal.get(k).Second);
-					
+
 					temporal.set(k, bound); //set the temporal guess to the outcome
-					
+
 					//if the bound fails break
 					if (!jR.boundedBy(lb.get(bound.First), ub.get(bound.Second))){
 						boundedBy = false;
@@ -1320,7 +1322,40 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 				}
 			}
 		}
-		return  null;
+		return insertAfter;
+	}
+	public boolean merge(GestureController o){
+		Vector<Integer> insertAfter = mesh(o);
+		
+		//If at least one point has a valid value then the gestures can be merged
+		//else they are two different gestures
+		boolean valid = false;
+		for (int i=0;i<o.size();i++){
+			if (insertAfter.get(i) != -1)
+				valid = true;
+		}
+		if (!valid) return false;
+		
+		boolean begin = true;
+		for (int i=0;i<o.size();i++){
+			int position = insertAfter.get(i)+1;
+			if (position == 0 ){
+				if (begin){
+					sequence.insertElementAt(o.sequence.get(i), position);
+				}
+				else{
+					sequence.add(o.sequence.get(i));
+				}
+			}
+			else{
+				begin = false;
+				sequence.insertElementAt(o.sequence.get(i), position);
+			}
+		}
+		return true;
+	}
+	public boolean append(GestureController o){
+		return sequence.addAll(o.sequence);
 	}
 	private Integer findPair(JointRelation s, Vector<JointRelation> target, int guess){
 		if (guess >= 0 && guess < target.size())
@@ -1331,6 +1366,38 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 				return i;
 		}
 		return null;
+	}
+	public void mirror(){
+		//reset gesture
+		step = 0;
+		
+		//iterator for sequence
+		Iterator<Vector<JointRelation>> seq = sequence.iterator();
+		//map from current to mirror values
+		Map<Integer, Integer> m = new HashMap<Integer, Integer>();
+		//set of values previously processed
+		Set<Integer> focus = new HashSet<Integer>();
+
+		while (seq.hasNext()){
+			//iterator through the relations in each step of sequence
+			Iterator<JointRelation> v = seq.next().iterator();
+			
+			while (v.hasNext()){
+				JointRelation j = v.next();
+				
+				//if the joint has not yet been processed, then process and
+				//add to map
+				if (focus.add(j.J.First)){
+					m.put(j.J.First, Skeleton.mirror(j.J.First));
+				}
+				if (focus.add(j.J.Second)){
+					m.put(j.J.Second, Skeleton.mirror(j.J.Second));
+				}
+				//change the target joint to the mirror equivelent
+				j.J.First = m.get(j.J.First);
+				j.J.Second = m.get(j.J.Second);
+			}
+		}
 	}
 	/**
 	 * @return

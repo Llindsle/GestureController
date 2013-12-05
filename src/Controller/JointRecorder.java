@@ -4,8 +4,10 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -43,13 +45,18 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	/**Denotes current tick for play back*/
 	private int playBackTick;
 	
+	/**Determines if left-right mirror is active or not*/
+	private boolean mirror;
+	
 	/**
-	 * Default Constructor
+	 * Default Constructor. joints and recorder are initialized and playBackTick
+	 * is set to 0, mirror is false by default.
 	 */
 	public JointRecorder(){
 		joints = new TreeSet<Integer>();
 		recorder = new ArrayList<Map<Integer, PVector>>();
 		playBackTick = 0;
+		mirror = false;
 	}
 	/**
 	 * Adds a joint if it is not already in the set. Joints may not be added
@@ -60,7 +67,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	 * 		True if j added successfully.
 	 * 		False if j already existed or record data exists
 	 */
-	public boolean addJoint(int j){
+	public boolean addJoint(Integer j){
 		//make sure that no record exists
 		if (!isEmpty())
 			return false;
@@ -68,15 +75,18 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 		return joints.add(j);
 	}
 	/**
-	 * Add what may be all the integers that SimpleOpenNI uses for skeletal
-	 * joint positions. It seems to record all the points though some do 
-	 * always record as null. 
+	 * Adds all joint locations tracked by SimpleOpenNI into the recorder.
+	 * This is done by calling addLeft(), addright() and addCenter().
 	 * 
 	 * If record exists returns False and adds no points.
 	 * 
 	 * @return
 	 * 		True if at least one point was added to joints.
 	 * 		False if a current record exist or no points were added.
+	 * 
+	 * @see JointRecorder#addLeft()
+	 * @see JointRecorder#addRight()
+	 * @see JointRecorder#addCenter()
 	 */
 	public boolean addAll(){
 		//check anti-record constraint
@@ -85,10 +95,117 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 		
 		//if any int gets added then set returns true
 		boolean set = false;
-		for (int i=0;i<25;i++){
-			set = joints.add(i) || set;
-		}
+		set = addLeft() || set;
+		set = addRight() || set;
+		set = addCenter() || set;
 		return set;
+	}
+	/**
+	 * Adds Left: Shoulder, elbow, hand, hip, knee, and foot (in order) to the
+	 * current tracked set.
+	 * @return
+	 * 		True if at least one point was added to joints.
+	 * 		False if a current record exist or no points were added.
+	 * 
+	 * @see JointRecorder#addRight()
+	 */
+	public boolean addLeft(){
+		return joints.addAll(getLeft());
+	}
+	/**
+	 * Adds Right: Shoulder, elbow, hand, hip, knee, and foot (in order) to the
+	 * current tracked set.
+	 * @return
+	 * 		True if at least one point was added to joints.
+	 * 		False if a current record exist or no points were added.
+	 * 
+	 * @see JointRecorder#addLeft()
+	 */
+	public boolean addRight(){
+		return joints.addAll(getRight());
+	}
+	/**
+	 * Adds Head, Neck and Torso into the tracked set
+	 * 
+	 * @return
+	 * 		True if at least one point was added to joints.
+	 * 		False if a current record exist or no points were added.
+	 */
+	public boolean addCenter(){
+		return joints.addAll(getSkelCenter());
+	}
+	private Set<Integer> getLeft(){
+		if (mirror){
+			return getSkelRight();
+		}
+		else{
+			return getSkelLeft();
+		}
+	}
+	static Set<Integer> getSkelLeft(){
+		Set<Integer> set= new TreeSet<Integer>();
+		set.add(SimpleOpenNI.SKEL_LEFT_SHOULDER);
+		set.add(SimpleOpenNI.SKEL_LEFT_ELBOW);
+		set.add(SimpleOpenNI.SKEL_LEFT_HAND);
+		set.add(SimpleOpenNI.SKEL_LEFT_HIP);
+		set.add(SimpleOpenNI.SKEL_LEFT_KNEE);
+		set.add(SimpleOpenNI.SKEL_LEFT_FOOT);
+		return set;
+	}
+	private Set<Integer> getRight(){
+		if (mirror){
+			return getSkelLeft();
+		}
+		else{
+			return getSkelRight();
+		}
+	}
+	static Set<Integer> getSkelRight(){
+		Set<Integer> set= new TreeSet<Integer>();
+		set.add(SimpleOpenNI.SKEL_RIGHT_SHOULDER);
+		set.add(SimpleOpenNI.SKEL_RIGHT_ELBOW);
+		set.add(SimpleOpenNI.SKEL_RIGHT_HAND);
+		set.add(SimpleOpenNI.SKEL_RIGHT_HIP);
+		set.add(SimpleOpenNI.SKEL_RIGHT_KNEE);
+		set.add(SimpleOpenNI.SKEL_RIGHT_FOOT);
+		return set;
+	}
+	static Set<Integer> getSkelCenter(){
+		Set<Integer> set = new TreeSet<Integer>();
+		set.add(SimpleOpenNI.SKEL_HEAD);
+		set.add(SimpleOpenNI.SKEL_NECK);
+		set.add(SimpleOpenNI.SKEL_TORSO);
+		return set;
+	}
+	private void mirror(){
+		
+	}
+	/**
+	 * Flips the mirror mode and mirrors all current focus joints. This could
+	 * invalidate recordings so it may only be done without an active record
+	 * if a record is active then this function will return false and mirror
+	 * will NOT change.
+	 * 
+	 * @return
+	 * 		True if the recording is empty.
+	 * 	<p>	False if there is a current record
+	 */
+	public boolean flipMirror(){
+		if (!isEmpty())
+			return false;
+		
+		mirror();
+		
+		return true;
+	}
+	/**
+	 * @return
+	 * 		the value of mirror
+	 * @see #mirror
+	 * @see #mirror()
+	 */
+	public boolean getMirror(){
+		return mirror;
 	}
 	/**
 	 * Takes a snapshot of each focus joint and adds to record
@@ -349,10 +466,21 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	}
 	/**
 	 * Clears the recorder, deleting the current recording, isEmpty() will
-	 * return true after this is called until record() is called.
+	 * return true after this is called until record() is called. Focus joints
+	 * will remain. To remove focus joints use {@link #clearFocus()}
 	 */
 	public void clear(){
 		recorder.clear();
+	}
+	/**
+	 * Clears focus joints, as these are linked to the recording the recording
+	 * is also cleared.
+	 * 
+	 * @see #clear()
+	 */
+	public void clearFocus(){
+		clear();
+		joints.clear();
 	}
 	/**
 	 * Returns a string of the recording and info about it, yea its toString()

@@ -2,6 +2,7 @@ package controller;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Scanner;
 
@@ -14,7 +15,7 @@ import processing.core.PVector;
  * @author Levi Lindsley
  *
  */
-public interface xmlGestureParser<E> {
+public interface xmlGestureParser<E> extends Serializable{
 	public abstract class xmlStatics implements xmlGestureParser<Object>{
 		/**
 		 * Creates a basic text element in xml format with beginning and end tags.
