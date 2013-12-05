@@ -1,7 +1,7 @@
 package controller;
 
 
-public class Tst {
+class Tst {
 	void run(){
 		GestureController tG = testGesture();
 		System.out.println(tG);

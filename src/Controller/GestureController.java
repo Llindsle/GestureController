@@ -3,7 +3,6 @@ package controller;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,7 +39,7 @@ import SimpleOpenNI.*;
  * @author Levi Lindsley
  *
  */
-public class GestureController implements xmlGestureParser<GestureController>, Serializable{
+public class GestureController implements xmlGestureParser<GestureController>{
 	/**
 	 * Different types of compression available for use on a gesture
 	 * The compression ranges from least(NONE), to most(DBL_AVG).
@@ -82,6 +81,7 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 	
 	/**The Sequence of joint relationships describing the gesture */
 	private Vector<Vector<JointRelation>> sequence; 
+	
 	//TODO Move this to a local variable in the few spots it is requred
 	/**The links between the diffrent levels of sequence, only used for generating
 	 * sequence and should be moved to a local variable later if possible */
@@ -268,27 +268,30 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 		Euclidean pos;
 		
 		//Add position data using the last angle type available
-		if (step == 0)
-			points.add(new PVector());
-		else{
-			pos = sequence.get(step-1).firstElement().angle.get(sequence.get(step-1).firstElement().angle.size()-1);
-			points.add(new PVector(pos.x.floatValue(),pos.y.floatValue(),pos.z.floatValue()));
-		}
-		if (step == size()){
-			points.add(new PVector());
-			points.add(new PVector());
-		}
-		
-		else{
-			PVector JointOneReal = getRealCoordinites(context,user, sequence.get(step).firstElement().J.First);
-			PVector JointTwoReal = getRealCoordinites(context,user, sequence.get(step).firstElement().J.Second);
-			JointRelation rel = compareJointPositions(sequence.get(step).firstElement().J,JointOneReal, JointTwoReal);
+		while (phase < sequence.get(step).size()){
+			if (step == 0)
+				points.add(new PVector());
+			else{
+				pos = sequence.get(step-1).firstElement().angle.get(sequence.get(step-1).get(phase).angle.size()-1);
+				points.add(new PVector(pos.x.floatValue(),pos.y.floatValue(),pos.z.floatValue()));
+			}
+			if (step == size()){
+				points.add(new PVector());
+				points.add(new PVector());
+			}
 			
-			pos = rel.angle.get(rel.angle.size()-1);
-			points.add(new PVector(pos.x.floatValue(),pos.y.floatValue(),pos.z.floatValue()));
-
-			pos = sequence.get(step).firstElement().angle.get(sequence.get(step).firstElement().angle.size()-1);
-			points.add(new PVector(pos.x.floatValue(),pos.y.floatValue(),pos.z.floatValue()));
+			else{
+				PVector JointOneReal = getRealCoordinites(context,user, sequence.get(step).get(phase).J.First);
+				PVector JointTwoReal = getRealCoordinites(context,user, sequence.get(step).get(phase).J.Second);
+				JointRelation rel = compareJointPositions(sequence.get(step).firstElement().J,JointOneReal, JointTwoReal);
+				
+				pos = rel.angle.get(rel.angle.size()-1);
+				points.add(new PVector(pos.x.floatValue(),pos.y.floatValue(),pos.z.floatValue()));
+	
+				pos = sequence.get(step).get(phase).angle.get(sequence.get(step).get(phase).angle.size()-1);
+				points.add(new PVector(pos.x.floatValue(),pos.y.floatValue(),pos.z.floatValue()));
+			}
+			phase ++;
 		}
 		return false;
 	}
@@ -534,9 +537,9 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 		
 		//convert data into projective data this seems more useful for comparison
 		//the raw data may work just as well though not sure so I use this
-//		c.convertRealWorldToProjective(Joint, Real);
-//		return Real;
-		return Joint;
+		c.convertRealWorldToProjective(Joint, Real);
+		return Real;
+//		return Joint;
 	}
 	/**
 	 * Checks the next step to see if the skeletal model derived from context matches the expected
@@ -917,7 +920,9 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 				//compare alpha to beta 
 				if (alpha.get(j).equalsCoordinates(beta.get(j))){
 //					if (debug) System.out.print("?");
+					
 					//TODO look at re-enabling smoothing
+					
 					//This just smoothing, while things are being reworked this 
 					//is temporarily disabled
 					
@@ -1238,7 +1243,8 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 	 * @return
 	 */
 	public Double comp(GestureController o){
-		//TODO make this function return something
+		//TODO make this function return something it does stuff
+		//but returns null at present.
 		
 		//determines if the key set of joints of this is greater or equal
 		//to the key set of o
@@ -1393,7 +1399,7 @@ public class GestureController implements xmlGestureParser<GestureController>, S
 				if (focus.add(j.J.Second)){
 					m.put(j.J.Second, Skeleton.mirror(j.J.Second));
 				}
-				//change the target joint to the mirror equivelent
+				//change the target joint to the mirror equivalent
 				j.J.First = m.get(j.J.First);
 				j.J.Second = m.get(j.J.Second);
 			}

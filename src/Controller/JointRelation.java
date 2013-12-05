@@ -16,7 +16,6 @@ import controller.xmlGestureParser.xmlStatics;
  */
 class JointRelation implements Serializable{
 	private static boolean debug = true;
-	private static double masterScale=100;
 	final private String classTag = "jR";
 	
 	/**
@@ -101,7 +100,6 @@ class JointRelation implements Serializable{
 		//Add all AngleType that are appropriate for Interpretation 
 		if ((AngleType.CROSS_PRODUCT.mask & Interpretation)!= 0){
 			Euclidean tmp = (pointOne.unitVector().crossProcuct(pointTwo.unitVector()));
-			tmp.scale(masterScale);
 			angle.add(tmp);
 			angleType.add(AngleType.CROSS_PRODUCT.mask);
 		}
@@ -117,10 +115,8 @@ class JointRelation implements Serializable{
 			angleType.add(AngleType.GRID.mask);
 		}
 		if ((AngleType.UNIT_VECTOR.mask & Interpretation)!= 0){
-			Euclidean tmp = new Euclidean();
-			tmp = pointOne.unitVector();
+			Euclidean tmp = pointOne.unitVector();
 			tmp.translate(pointTwo.unitVector().inverse());
-//			tmp.scale(masterScale);
 			angle.add(tmp);
 			angleType.add(AngleType.UNIT_VECTOR.mask);
 		}

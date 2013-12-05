@@ -258,7 +258,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	 * 
 	 * @return
 	 * 		List of PVector[2] each representing the coordinates of a joint
-	 * @see JointRecorder#playBack(Set)
+	 * @see JointRecorder#playBack(Collection)
 	 */
 	public List<PVector[]> playBack(){
 		return playBack(joints);
@@ -272,7 +272,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	 * @param focus : list of joints to include in return vector
 	 * @return
 	 * 		List of PVector[2] each representing the coordinates of a joint
-	 * @see JointRecorder#playBack(int, Set)
+	 * @see JointRecorder#playBack(int, Collection)
 	 */
 	public List<PVector []> playBack(Collection<Integer> focus){
 		playBackTick ++;

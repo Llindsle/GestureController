@@ -13,7 +13,8 @@ import controller.xmlGestureParser.xmlStatics;
  *
  */
 class Euclidean implements Serializable{
-	private static Double Epsilon = 0.015;
+	private static Double unitSize = 1.0;
+	private static Double Epsilon = 0.015*unitSize;
 	private static final String classTag = "Euclidean";
 	
 	static final Euclidean ZERO = new Euclidean (0.0,0.0,0.0);
@@ -104,6 +105,14 @@ class Euclidean implements Serializable{
 		this.z *= s;
 	}
 	/**
+	 * Scales a 1.0 unit vector to a unitSize unit vector
+	 */
+	private void scale(){
+		this.x *= unitSize;
+		this.y *= unitSize;
+		this.z *= unitSize;
+	}
+	/**
 	 * translates coordinate of this by the coordinates of o
 	 * @param o
 	 */
@@ -126,7 +135,9 @@ class Euclidean implements Serializable{
 	 */
 	Euclidean unitVector(){
 		Double l = length();
-		return new Euclidean(x/l,y/l,z/l);
+		Euclidean e = new Euclidean(x/l,y/l,z/l);
+		e.scale();
+		return e;
 	}
 	/**
 	 * returns cross product between this and o
@@ -142,11 +153,13 @@ class Euclidean implements Serializable{
 		return s;
 	}
 	/**
-	 * returns dot product between vectors
-	 * @param o
+	 * Returns dot product between this and o as different vectors.
+	 * @param o Euclidean to take dot produce with
 	 * @return
+	 * 		Dot produce as a {@link Double}
 	 */
 	Double dotProduct(Euclidean o){
+		Double d;
 		return (this.x*o.x)+(this.y*o.y)+(this.z*o.z);
 	}
 	Euclidean unitize(){
@@ -222,6 +235,22 @@ class Euclidean implements Serializable{
 	}
 	public static void changeEpsilon(Double delta){
 		Epsilon += delta;
+	}
+	public static Double getUnitSize(){
+		return unitSize;
+	}
+	/**
+	 * Changes unitSize by delta (unitSize += delta).
+	 * @param delta value to change unitSize by
+	 */
+	public static void changeUnitSize(Double delta){
+		unitSize += delta;
+	}
+	/**
+	 * Sets unitSize to 1.0
+	 */
+	public static void resetUnitSize(){
+		unitSize = 1.0;
 	}
 	public String toString(){
 		return "<"+x+", "+y+", "+z+">";
