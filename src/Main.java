@@ -41,9 +41,6 @@ public class Main extends PApplet{
 
 	public void setup()
 	{	
-		boolean blarg = true;
-		vK.setup();
-//		if (blarg) return;
 	  context = new SimpleOpenNI(this);
 	  gesture = new Vector<GestureController>();
 	  log = new GestureRecord();
@@ -104,10 +101,6 @@ public class Main extends PApplet{
 	}
 	public void draw()
 	{
-		boolean blarg = true;
-		vK.draw();
-		if (blarg) return;
-		
 	  // update the cam
 	  context.update();
 	  
@@ -135,7 +128,7 @@ public class Main extends PApplet{
 
 	        vK.drawContext(i, projLeftHand, projRightHand);
 //	        drawContext(i, projLeftHand, projRightHand);
-	        drawSkeletonPrime(userList[i]);
+	        drawSkeleton(userList[i]);
 	  	  if(playback){
 			  viewRecord();
 		      for (int j=0;j<gesture.size();j++)
@@ -144,8 +137,8 @@ public class Main extends PApplet{
 		    	  }
 		     return;
 		  }
-	  	  else
-	  		  drawSkeleton(userList[i]);
+	  	 // else
+	  		//  drawSkeleton(userList[i]);
 	      
 	      //check the gesture for completion
 	      for (int j=0;j<gesture.size();j++)
@@ -260,45 +253,6 @@ public class Main extends PApplet{
 		System.out.println("Wrist "+SimpleOpenNI.SKEL_RIGHT_WRIST);
 		
 	}
-	void drawSkeletonPrime(int userId){
-		  // to get the 3d joint data
-		  /*
-		  PVector jointPos = new PVector();
-		  context.getJointPositionSkeleton(userId,SimpleOpenNI.SKEL_NECK,jointPos);
-		  println(jointPos);
-		  */
-			strokeWeight(2);
-	stroke(0);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_NECK);
-
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_LEFT_COLLAR);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_COLLAR, SimpleOpenNI.SKEL_LEFT_SHOULDER);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_WRIST);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_WRIST, SimpleOpenNI.SKEL_LEFT_HAND);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HAND, SimpleOpenNI.SKEL_LEFT_FINGERTIP);
-
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_RIGHT_COLLAR);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_COLLAR, SimpleOpenNI.SKEL_RIGHT_SHOULDER);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_RIGHT_ELBOW);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_ELBOW, SimpleOpenNI.SKEL_RIGHT_WRIST);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_WRIST, SimpleOpenNI.SKEL_RIGHT_HAND);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HAND, SimpleOpenNI.SKEL_RIGHT_FINGERTIP);
-
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_TORSO);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_TORSO);
-
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_LEFT_HIP);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HIP, SimpleOpenNI.SKEL_LEFT_KNEE);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_KNEE, SimpleOpenNI.SKEL_LEFT_ANKLE);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_ANKLE, SimpleOpenNI.SKEL_LEFT_FOOT);
-
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_RIGHT_HIP);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HIP, SimpleOpenNI.SKEL_RIGHT_KNEE);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_KNEE, SimpleOpenNI.SKEL_RIGHT_ANKLE);
-			  context.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_ANKLE, SimpleOpenNI.SKEL_RIGHT_FOOT); 
-			  noStroke();
-	}
 	// draw the skeleton with the selected joints
 	void drawSkeleton(int userId)
 	{
@@ -410,8 +364,10 @@ stroke(0);
 //					ObjectOutputStream oos = new ObjectOutputStream(fos);
 //					oos.writeObject(gesture);
 				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (IOException e) {
+					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 //			    
@@ -430,6 +386,7 @@ stroke(0);
 				System.out.println("Gestures Loaded: "+gesture.size());
 				System.out.println(gesture);
 			} catch (Exception e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} 
 		}
