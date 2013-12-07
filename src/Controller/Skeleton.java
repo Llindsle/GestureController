@@ -18,7 +18,7 @@ public enum Skeleton {
 	FINGERTIP(SimpleOpenNI.SKEL_LEFT_FINGERTIP, SimpleOpenNI.SKEL_RIGHT_FINGERTIP),
 	FOOT(SimpleOpenNI.SKEL_LEFT_FOOT, SimpleOpenNI.SKEL_RIGHT_FOOT),
 	HAND(SimpleOpenNI.SKEL_LEFT_HAND, SimpleOpenNI.SKEL_RIGHT_HAND),
-	HIP(SimpleOpenNI.SKEL_LEFT_HIP, SimpleOpenNI.SKEL_LEFT_HIP),
+	HIP(SimpleOpenNI.SKEL_LEFT_HIP, SimpleOpenNI.SKEL_RIGHT_HIP),
 	KNEE(SimpleOpenNI.SKEL_LEFT_KNEE, SimpleOpenNI.SKEL_RIGHT_KNEE),
 	SHOULDER(SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_RIGHT_SHOULDER),
 	WRIST(SimpleOpenNI.SKEL_LEFT_WRIST, SimpleOpenNI.SKEL_RIGHT_WRIST);
@@ -26,6 +26,7 @@ public enum Skeleton {
 	private Integer LEFT;
 	private Integer RIGHT;
 	private boolean single;
+	static boolean default_Left=true;
 	Skeleton(int l, int r){
 		LEFT = l;
 		RIGHT = r;
@@ -33,20 +34,20 @@ public enum Skeleton {
 	}
 	Skeleton(int v){
 		LEFT  = v;
-		RIGHT = null;
+		RIGHT = v;
 		single = true;
 	}
 	public Integer get(){
-		if (single)
+		if (default_Left)
 			return LEFT;
-		return null;
+		return RIGHT;
 	}
-	public Integer getLeft(){
+	public Integer left(){
 		if (!single)
 			return LEFT;
 		return null;
 	}
-	public Integer getRight(){
+	public Integer right(){
 		if (!single)
 			return RIGHT;
 		return null;
@@ -56,7 +57,7 @@ public enum Skeleton {
 		Skeleton skel [] = Skeleton.values();
 		for (int i=0;i<skel.length;i++){
 			if (!skel[i].single)
-				set.add(skel[i].getLeft());
+				set.add(skel[i].left());
 		}
 		return set;
 	}
@@ -65,7 +66,7 @@ public enum Skeleton {
 		Skeleton skel [] = Skeleton.values();
 		for (int i=0;i<skel.length;i++){
 			if (!skel[i].single)
-				set.add(skel[i].getRight());
+				set.add(skel[i].right());
 		}
 		return set;
 	}
@@ -78,13 +79,19 @@ public enum Skeleton {
 		}
 		return set;
 	}
+	public static void setDefaultLeft(){
+		default_Left = true;
+	}
+	public static void setDefaultRight(){
+		default_Left = false;
+	}
 	public static Integer mirror(Integer val){
 		Skeleton skel [] = Skeleton.values();
 		for (int i=0;i<skel.length;i++){
-			if (val == skel[i].getLeft())
-				return skel[i].getRight();
-			if (val == skel[i].getRight())
-				return skel[i].getLeft();
+			if (val == skel[i].left())
+				return skel[i].right();
+			if (val == skel[i].right())
+				return skel[i].left();
 		}
 		return null;
 	}
@@ -97,10 +104,10 @@ public enum Skeleton {
 					set.add(skel[i].get());
 			}
 			else{
-				if (val.contains(skel[i].getLeft()))
-					set.add(skel[i].getRight());
-				if (val.contains(skel[i].getRight()))
-					set.add(skel[i].getLeft());
+				if (val.contains(skel[i].left()))
+					set.add(skel[i].right());
+				if (val.contains(skel[i].right()))
+					set.add(skel[i].left());
 			}
 		}
 		return set;
