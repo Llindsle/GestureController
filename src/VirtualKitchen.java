@@ -17,12 +17,15 @@ public class VirtualKitchen {
 	String location = "";
 	boolean rightHand = true;
 	int maxUsers = 5;
+	
 	PApplet screen;
+	Sidebar sidebar;
 	int height;
 	int width;
 
-	VirtualKitchen(PApplet p){
+	VirtualKitchen(PApplet p, Sidebar s){
 		screen = p;
+		sidebar = s;
 		potx = 100;
 		poty = 300;
 		lidx = 300;
@@ -39,7 +42,6 @@ public class VirtualKitchen {
 		PVector projRightHand = new PVector(screen.mouseX,screen.mouseY, 0);
 		drawContext(0, projLeftHand, projRightHand, screen.width, screen.height);
 	}
-
 	void drawContext(int i, PVector left, PVector right, int w, int h)
 	{
 		screen.pushMatrix();
@@ -88,7 +90,7 @@ public class VirtualKitchen {
 				{
 					heldObject = "covered pot";
 				}
-				screen.println("  ACTION: Pick up " + heldObject);
+				pickup();
 				pause = 0;
 			}
 			else if ( left.x < potx && left.x > potx-75 && left.y < poty && left.y > poty-10 &&
@@ -102,7 +104,7 @@ public class VirtualKitchen {
 				{
 					heldObject = "covered pot";
 				}
-				screen.println("  ACTION: Pick up " + heldObject);
+				pickup();
 				pause = 0;
 			}
 		}
@@ -126,7 +128,7 @@ public class VirtualKitchen {
 				somethingInHand = true;
 				pause = 0;
 				heldObject = "spoon";
-				screen.println("  ACTION: Pick up " + heldObject);
+				pickup();
 			}
 			else if (left.x > spoonx && left.x < spoonx+10 && left.y > spoony && left.y < spoony + 50 &&
 					!somethingInHand && pause > pauseTimer)
@@ -136,7 +138,7 @@ public class VirtualKitchen {
 				somethingInHand = true;
 				pause = 0;
 				heldObject = "spoon";
-				screen.println("  ACTION: Pick up " + heldObject);
+				pickup();
 			}
 		}
 
@@ -159,7 +161,7 @@ public class VirtualKitchen {
 				somethingInHand = true;
 				pause = 0;
 				heldObject = "knife";
-				screen.println("  ACTION: Pick up " + heldObject);
+				pickup();
 			}
 			else if (left.x > knifex && left.x < knifex+40 && left.y > knifey && left.y < knifey + 10 &&
 					!somethingInHand && pause > pauseTimer)
@@ -169,7 +171,7 @@ public class VirtualKitchen {
 				somethingInHand = true;
 				pause = 0;
 				heldObject = "knife";
-				screen.println("  ACTION: Pick up " + heldObject);
+				pickup();
 			}
 		}
 
@@ -193,7 +195,7 @@ public class VirtualKitchen {
 				lidOnPot = false;
 				pause = 0;
 				heldObject = "lid";
-				screen.println("  ACTION: Pick up " + heldObject);
+				pickup();
 			}
 			else if (left.x > lidx-10 && left.x < lidx+10 && left.y > lidy-20 && left.y < lidy &&
 					!somethingInHand && pause > pauseTimer)
@@ -204,7 +206,7 @@ public class VirtualKitchen {
 				lidOnPot = false;
 				pause = 0;
 				heldObject = "lid";
-				screen.println("  ACTION: Pick up " + heldObject);
+				pickup();
 			}
 		}
 
@@ -225,12 +227,26 @@ public class VirtualKitchen {
 			holdKnife = false;
 			somethingInHand = false;
 			pause = 0;
-			screen.println("  ACTION: Set down " + heldObject + " on " + location);
+			drop();
 		}
 		
 		screen.popMatrix();
 	}
-
+	void pickup(){
+		PApplet.println("	ACTION: Pick up "+heldObject);
+		sidebar.update("ACTION", "Pick up "+heldObject);
+		sidebar.clear("GESTURE");
+	}
+	void drop(){
+		PApplet.println("	ACTION: Set down "+heldObject+" on "+location);
+		sidebar.update("ACTION", "Set down "+heldObject+" on "+location);
+		sidebar.clear("GESTURE");
+	}
+	void gesture(String g){
+		PApplet.println("	GESTURE: "+g);
+		sidebar.clear("ACTION");
+		sidebar.update("GESTURE", g);
+	}
 	void dropObject()
 	{
 		if ((object[0] >= 0 && object[0] <= 200) || (object[0] >= width - 150 && object[0] <= width))
@@ -247,7 +263,7 @@ public class VirtualKitchen {
 				holdLid = false;
 				holdKnife = false;
 				somethingInHand = false;
-				screen.println("  ACTION: Set down " + heldObject + " on " + location);
+				drop();
 
 				pause = 0;
 			}
@@ -263,7 +279,7 @@ public class VirtualKitchen {
 					somethingInHand = false;
 					pause = 0;
 					lid(potx+50, poty-10);
-					screen.println("GESTURE: Cover Pot");
+					gesture("Cover Pot");
 				}
 			}
 		}

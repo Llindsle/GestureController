@@ -59,6 +59,16 @@ public class GestureRecord extends GestureController{
 		return true;
 	}
 	/**
+	 * Checks if the Pair p is a focus pair.
+	 * @param p - Pair to check for
+	 * @return
+	 * 		True if p is a focus pair.
+	 * <p> False otherwise
+	 */
+	public boolean contains(Pair p){
+		return Focus.contains(p);
+	}
+	/**
 	 * Calculates relationships of all focus pairs retrieved from context and
 	 * stores them in recorder
 	 * 
@@ -66,9 +76,10 @@ public class GestureRecord extends GestureController{
 	 * @param user : user id to retrieve skeletal info from
 	 */
 	public void record(SimpleOpenNI context, int user){
+		//fail fast if not tracking user
 		if (!context.isTrackingSkeleton(user))
 			return;
-//		int i=0;
+		
 		for (Pair jP : Focus){
 			
 			//get coordinates for both joints
@@ -82,15 +93,12 @@ public class GestureRecord extends GestureController{
 			//compare joints and get relative position
 			JointRelation relative = super.compareJointPositions(jP,jointOne, jointTwo);
 			
-//			boolean conn = (i<Focus.size()-1);
-//			relative.C = conn;
 			//add relative coordinates to proper joint pair record vector
 			super.add(relative);
-//			i++;
 		}
 	}
 	/**
-	 * Processes the JointRecorder from [startTick , endTick) and adds data 
+	 * Processes the JointRecorder in range [startTick , endTick), and adds data 
 	 * to this based on focus joint pairs if available in log. If log does
 	 * not have all focus joints that this requires then no data will be 
 	 * processed. Note endTick is not included in the processed data.
@@ -115,7 +123,6 @@ public class GestureRecord extends GestureController{
 		
 		//Add recorded data in range [startTime, endTime)
 		for (int i=startTick;i<endTick;i++){
-//			int j=0;
 			for (Pair jP : Focus){
 				//Get Joints from the log at time i
 				PVector jointOne = log.getJoint(i, jP.First);
@@ -125,10 +132,7 @@ public class GestureRecord extends GestureController{
 				JointRelation relative = super.compareJointPositions(jP,jointOne, jointTwo);
 				
 				//Add to the recorder
-//				boolean conn = (j<Focus.size()-1);
-//				relative.C = conn;
 				super.add(relative);
-//				j++;
 			}
 		}
 	}
@@ -193,6 +197,13 @@ public class GestureRecord extends GestureController{
 	 */
 	public void clear(){
 		super.clear();
+	}
+	/**
+	 * Clears focus pairs, recorded data is also cleared.
+	 */
+	public void clearFocus(){
+		super.clear();
+		Focus.clear();
 	}
 	@Override
 	public String toString(){

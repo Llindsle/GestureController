@@ -17,6 +17,8 @@ import controller.xmlGestureParser.xmlStatics;
  *
  */
 public class Pair implements Serializable{
+	/**Generated serialVersionUID*/
+	private static final long serialVersionUID = -449449065485240596L;
 	final private String classTag = "pair";
 	/** First Joint in focus */
 	Integer First;
@@ -33,9 +35,11 @@ public class Pair implements Serializable{
 		First = new Integer(f);
 		Second = new Integer(s);
 	}
+	/**@return this.First*/
 	public Integer getFirst(){
 		return First;
 	}
+	/**@return this.Second*/
 	public Integer getSecond(){
 		return Second;
 	}
@@ -84,7 +88,6 @@ public class Pair implements Serializable{
 	/**
 	 * Creates and xml representation of this with no default leading tabs
 	 * @return String xml representation of this
-	 * @see Pair#toXML(String)
 	 */
 	public String toXML(){
 		String context = new String();

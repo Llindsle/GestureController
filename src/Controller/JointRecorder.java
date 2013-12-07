@@ -21,22 +21,30 @@ import SimpleOpenNI.SimpleOpenNI;
 
 /**
  * JointRecorder records the position of joints and can be used to access 
- * the location of a joint at a specific point in time.
+ * the location of a joint at a specific point in time. Joints can be added
+ * using SimpleOpenNIConstants or the enum {@link Skeleton}.
  * 
  * Recording does not support multiple users, more that one user may interfere
  * with recording.
+ * 
+ * @see GestureRecord#java
+ * @see Skeleton#java
  * 
  * @author Levi Lindsley
  *
  */
 public class JointRecorder implements xmlGestureParser<JointRecorder>{
+	/**Generated serialVersionUID*/
+	private static final long serialVersionUID = -4796232190131039155L;
+
 	/**Used only to print debug output*/
 	@SuppressWarnings("unused")
 	private boolean debug = true;
 	
+	/**XML classTag*/
 	final String classTag = "recorder";
 
-	/**SimpleOpenNI skeletal points to record*/
+	/**Integers corresponding to SimpleOpenNI skeletal points to record*/
 	private Set<Integer> joints;
 	
 	/**The record of all joints at each distinct record call*/
@@ -65,7 +73,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	 * @param j : Integer to add to joints
 	 * @return
 	 * 		True if j added successfully.
-	 * 		False if j already existed or record data exists
+	 * 	<p>	False if j already existed or record data exists
 	 */
 	public boolean addJoint(Integer j){
 		//make sure that no record exists
@@ -74,6 +82,13 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 		
 		return joints.add(j);
 	}
+	/**
+	 * Adds all the Integers represented by collection to joints.
+	 * @param c - Collection to add
+	 * @return
+	 * 		True if at least one element was added successfully 
+	 *  <p> False no element could be added.
+	 */
 	public boolean addAll(Collection<Integer> c){
 		return joints.addAll(c);
 	}
@@ -85,7 +100,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	 * 
 	 * @return
 	 * 		True if at least one point was added to joints.
-	 * 		False if a current record exist or no points were added.
+	 * 	<p>	False if a current record exist or no points were added.
 	 * 
 	 * @see JointRecorder#addLeft()
 	 * @see JointRecorder#addRight()
@@ -104,11 +119,11 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 		return set;
 	}
 	/**
-	 * Adds Left: Shoulder, elbow, hand, hip, knee, and foot (in order) to the
+	 * Adds Left: Shoulder, elbow, hand, hip, knee, and foot to the
 	 * current tracked set.
 	 * @return
 	 * 		True if at least one point was added to joints.
-	 * 		False if a current record exist or no points were added.
+	 * 	<p>	False if a current record exist or no points were added.
 	 * 
 	 * @see JointRecorder#addRight()
 	 */
@@ -116,11 +131,11 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 		return joints.addAll(getLeft());
 	}
 	/**
-	 * Adds Right: Shoulder, elbow, hand, hip, knee, and foot (in order) to the
+	 * Adds Right: Shoulder, elbow, hand, hip, knee, and foot to the
 	 * current tracked set.
 	 * @return
 	 * 		True if at least one point was added to joints.
-	 * 		False if a current record exist or no points were added.
+	 * 	<p>	False if a current record exist or no points were added.
 	 * 
 	 * @see JointRecorder#addLeft()
 	 */
@@ -132,56 +147,47 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	 * 
 	 * @return
 	 * 		True if at least one point was added to joints.
-	 * 		False if a current record exist or no points were added.
+	 * 	<p>	False if a current record exist or no points were added.
 	 */
 	public boolean addCenter(){
-		return joints.addAll(getSkelCenter());
+		return joints.addAll(Skeleton.getAllCenter());
 	}
+	/**
+	 * Gets a set of points that represent the left half of the skeleton.
+	 * If mirror is active then this set of points is mirrored and the right
+	 * points are retrieved.
+	 * @return
+	 * 		Set of Left points from Skeleton.
+	 */
 	private Set<Integer> getLeft(){
 		if (mirror){
-			return getSkelRight();
+			return Skeleton.getAllRight();
 		}
 		else{
-			return getSkelLeft();
+			return Skeleton.getAllLeft();
 		}
 	}
-	static Set<Integer> getSkelLeft(){
-		Set<Integer> set= new TreeSet<Integer>();
-		set.add(SimpleOpenNI.SKEL_LEFT_SHOULDER);
-		set.add(SimpleOpenNI.SKEL_LEFT_ELBOW);
-		set.add(SimpleOpenNI.SKEL_LEFT_HAND);
-		set.add(SimpleOpenNI.SKEL_LEFT_HIP);
-		set.add(SimpleOpenNI.SKEL_LEFT_KNEE);
-		set.add(SimpleOpenNI.SKEL_LEFT_FOOT);
-		return set;
-	}
+	/**
+	 * Gets a set of points that represent the right half of the skeleton.
+	 * If mirror is active then this set of points is mirrored and the left
+	 * points are retrieved.
+	 * @return
+	 * 		Set of Right points from Skeleton.
+	 */
 	private Set<Integer> getRight(){
 		if (mirror){
-			return getSkelLeft();
+			return Skeleton.getAllLeft();
 		}
 		else{
-			return getSkelRight();
+			return Skeleton.getAllRight();
 		}
 	}
-	static Set<Integer> getSkelRight(){
-		Set<Integer> set= new TreeSet<Integer>();
-		set.add(SimpleOpenNI.SKEL_RIGHT_SHOULDER);
-		set.add(SimpleOpenNI.SKEL_RIGHT_ELBOW);
-		set.add(SimpleOpenNI.SKEL_RIGHT_HAND);
-		set.add(SimpleOpenNI.SKEL_RIGHT_HIP);
-		set.add(SimpleOpenNI.SKEL_RIGHT_KNEE);
-		set.add(SimpleOpenNI.SKEL_RIGHT_FOOT);
-		return set;
-	}
-	static Set<Integer> getSkelCenter(){
-		Set<Integer> set = new TreeSet<Integer>();
-		set.add(SimpleOpenNI.SKEL_HEAD);
-		set.add(SimpleOpenNI.SKEL_NECK);
-		set.add(SimpleOpenNI.SKEL_TORSO);
-		return set;
-	}
+	/**
+	 * Uses {@link Skeleton} to mirror the set of focus joints and
+	 * changes joints to the mirror set. 
+	 */
 	private void mirror(){
-		
+		joints = Skeleton.mirror(joints);
 	}
 	/**
 	 * Flips the mirror mode and mirrors all current focus joints. This could
@@ -434,6 +440,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	public int getTicks(){
 		return recorder.size();
 	}
+	/**@return The current playBackTick tick*/
 	public int getPlayBackTick(){
 		return playBackTick;
 	}
@@ -442,7 +449,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	 * @param j : value to check for
 	 * @return
 	 * 		True if joints contains j.
-	 * 		False in all other cases.
+	 * 	<p>	False in all other cases.
 	 */
 	public boolean contains(int j){
 		return joints.contains(j);
@@ -452,7 +459,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	 * @param j : Set to check for
 	 * @return
 	 * 		True if j is a subset of joints.
-	 * 		False otherwise.
+	 * 	<p>	False otherwise.
 	 */
 	public boolean containsAll(Set<Integer> j){
 		return joints.containsAll(j);
@@ -462,7 +469,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	 * if there is no recorded data but there is focus joints.
 	 * @return
 	 * 		True if recorder is empty.
-	 * 		False else.
+	 * 	<p>	False else.
 	 */
 	public boolean isEmpty(){
 		return recorder.isEmpty();
@@ -561,7 +568,6 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	}
 	@Override
 	public JointRecorder load(Scanner xmlInput) throws UnsupportedOperationException {
-		// TODO Auto-generated method stub
 		UnsupportedOperationException e = new UnsupportedOperationException();
 		throw e;
 	}

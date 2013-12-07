@@ -57,8 +57,6 @@ public class Main extends PApplet{
  
 	public void setup()
 	{	
-		vK = new VirtualKitchen(this);
-		
 		context = new SimpleOpenNI(this);
 //		printSkeletalConst();
 //		boolean b= true;
@@ -124,6 +122,9 @@ public class Main extends PApplet{
 
 		//create sidebar
 		s = new Sidebar(this);
+		
+		//create VirtualKitchen
+		vK = new VirtualKitchen(this,s);
 		
 		//init collections for selector
 		initSelector();
@@ -248,8 +249,8 @@ public class Main extends PApplet{
 		drawLimb(Skeleton.NECK.get(), Skeleton.HEAD.get());
 		drawLimb(Skeleton.SHOULDER.left(), Skeleton.NECK.get());
 		drawLimb(Skeleton.SHOULDER.right(), Skeleton.NECK.get());
-		drawLimb(Skeleton.TORSO.get(), Skeleton.SHOULDER.left());
-		drawLimb(Skeleton.TORSO.get(), Skeleton.SHOULDER.right());
+		drawLimb(Skeleton.SHOULDER.left(), Skeleton.TORSO.get());
+		drawLimb(Skeleton.SHOULDER.right(), Skeleton.TORSO.get());
 		drawLimb(Skeleton.TORSO.get(), Skeleton.HIP.left());
 		drawLimb(Skeleton.TORSO.get(), Skeleton.HIP.right());
 		
@@ -505,8 +506,16 @@ public class Main extends PApplet{
 		context.convertRealWorldToProjective(Joint, R2);
 		
 		pushStyle();
-		if (jR.contains(First)&& jR.contains(Second))
+		if (jR.contains(Second))
+			fill(255,0,0);
+		else
+			fill(0);
+		ellipse(R2.x, R2.y, jointSize, jointSize);
+		//returns false if they exist
+		if (log.contains(new Pair(First, Second)))
 			stroke(255,0,0);
+		else
+			stroke(0,0,255);
 		line(R1.x, R1.y, R2.x, R2.y);
 		popStyle();
 
@@ -520,7 +529,7 @@ public class Main extends PApplet{
 		 */
 		strokeWeight(2);
 		stroke(0);
-		drawLimb(userId, Skeleton.HEAD.get(), Skeleton.NECK.get());
+		drawLimb(userId, Skeleton.NECK.get(), Skeleton.HEAD.get());
 
 		Skeleton.setDefaultLeft();
 		drawLimb(userId, Skeleton.NECK.get(), Skeleton.SHOULDER.get());

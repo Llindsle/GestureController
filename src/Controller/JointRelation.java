@@ -15,28 +15,45 @@ import controller.xmlGestureParser.xmlStatics;
  *
  */
 class JointRelation implements Serializable{
+	/**Generated serialVersionUID*/
+	private static final long serialVersionUID = -1971456988738778271L;
+	/**Used to toggle debug output*/
 	private static boolean debug = true;
+	/**XML classTag*/
 	final private String classTag = "jR";
 	
 	/**
 	 * This is used to pan through the different types of comparisons
 	 * The best choice at current seems to be 0x1, 0x3, 0x7 each increase slightly
 	 * more bounded than the previous.
+	 * @see AngleType
 	 */
 	final static int Interpretation = 0x1;
+	/**
+	 * Enumerator to determine what type(s) of comparison is used when 
+	 * creating a new JointRelation {@link JointRelation#Interpretation}
+	 * is used to mask each value to determine which are added to
+	 * {@link JointRelation#angle}.
+	 * @author Levi Lindsley
+	 *
+	 */
 	private enum AngleType{
 		//Best
+		/**mask 0x1*/
 		CROSS_PRODUCT(0x1),
 		//Good
+		/**mask 0x2*/
 		UNIT_VECTOR(0x2),
 		/* This is the old grid system
 		 * still works good unless you hover around a boundary or never
 		 * change zones so in other words, not really thats why other systems
 		 * got added.
 		 */
+		/**mask 0x4*/
 		GRID(0x4),
 		//this is really bad with the epsilon needed for the others
 		//the bound is to tight and it registers a gesture
+		/**mask 0x8*/
 		ANGLE_2D(0x8); 
 		
 		private int mask;
@@ -50,8 +67,7 @@ class JointRelation implements Serializable{
 	/**Pair of SimpleOpenNI joints */
 	Pair J;
 	
-//	Euclidean offset;
-	/** */
+	/**List of comparison types determined by {@link #Interpretation} */
 	List<Euclidean> angle;
 	
 	/**Describes the AngleType associated with each of the Euclideans stored
@@ -59,40 +75,39 @@ class JointRelation implements Serializable{
 	 */
 	List<Integer> angleType;
 	
-	/**Determines if this action is concurrent with the action directly after it */
-//	Boolean C;
-	
 	/**Set to the previous appearance of ( JointOne, JointTwo ) */
 	Pair prev;
 	
 	/**
 	 * Default no argument constructor cause this is a handy thing to have, 
-	 * it just sets everything to null or a null like value.
+	 * it just sets everything to null.
 	 */
 	JointRelation(){
 		J = null;
 		angle = null;
 		angleType = null;
-//		offset = new Euclidean();
-//		C = false;
 		prev = null;
 		angle = null;
 	}
 	/**
-	 * The constructor called by Gesturecontroller.addPoint();
-	 * @param J1 : SimpleOpenNI constant for a joint 
-	 * @param J2 : SimpleOpenNI constant for a joint
-	 * @param x : x relationship between J2 and J1
-	 * @param y : y relationship between J2 and J1
-	 * @param z : z relationship between J2 and J1
-	 * @param conn : 
-	 * Is this concurrent with the next action in sequence, should not be true for last action
+	 * Constructs the relation between the two joints represented by j, with
+	 * the relation being determined by pointOne and pointTwo with type of 
+	 * comparison between them determined by {@link #Interpretation}
+	 * @param j	- Pair representing joints
+	 * @param pointOne - Value representative of j.First
+	 * @param pointTwo - Value representative of j.Second
 	 */
 	JointRelation(Pair j,Euclidean pointOne, Euclidean pointTwo){
 		J = j;
 		setAngle(pointOne,pointTwo);
 		prev = null;
 	}
+	/**
+	 * Sets the angle between the two points to the comparison type expressed
+	 * by {@link #Interpretation}
+	 * @param pointOne - Value representative of J.First
+	 * @param pointTwo - Value representative of J.First
+	 */
 	void setAngle(Euclidean pointOne, Euclidean pointTwo){
 		angle = new ArrayList<Euclidean>();
 		angleType = new ArrayList<Integer>();
@@ -157,6 +172,23 @@ class JointRelation implements Serializable{
 		}
 		return true;
 	}
+	/**
+	 * Determines if this is bounded above and below by lb and ub. The bounds
+	 * are not strict so lb could be the upper bound as long as ub is then the
+	 * lower bound so if this returns true then lb and ub are guaranteed to bound
+	 * this but which is the uppper and which is the lower bound is not known.
+	 * <p>
+	 * The bounds are checked for all active AngleTypes and all must be bound this
+	 * but the bounds of the different angle types need not be on the same side. 
+	 * Thus there could be an upper bound that on the next angle type is a 
+	 * lower bound due to the different types of calculation.
+	 * 
+	 * @param lb - JointRelation forming lower bound
+	 * @param ub - JointRelation forming upper bound
+	 * @return
+	 * 		True if this is bounded by lb and ub
+	 * <p> False otherwise
+	 */
 	public boolean boundedBy(JointRelation lb, JointRelation ub){
 		for(int i=0;i<this.angle.size();i++){
 			if (!(this.angle.get(i).isBoundedBy(lb.angle.get(i), ub.angle.get(i))))
@@ -164,6 +196,20 @@ class JointRelation implements Serializable{
 		}
 		return true;
 	}
+	/**
+	 * Determines if val is bounded by ub and lb. The bounds are not strictly
+	 * in that order so ub may be the lower bound but if that is so then lb 
+	 * must be the upper bound so if this returns true then val is bounded by
+	 * ub and lb but which is the upper bound and which is the lower bound is
+	 * unknown.
+	 * 
+	 * @param ub - Upper bound
+	 * @param val - value to check if bounded
+	 * @param lb - Lower bound
+	 * @return
+	 * 		True if val is bounded by ub and lb.
+	 * <p> False otherwise
+	 */
 	public boolean chkBounds(double lb, double val, double ub){
 		if (lb < ub){
 			double tmp = lb;
@@ -181,7 +227,6 @@ class JointRelation implements Serializable{
 		boolean e;
 		e = this.J.equals(other.J);
 		e = e && this.angle.equals(other.angle);
-//		e = e && this.C==other.C;
 		e = e && this.prev.equals(other.prev);
 		return e;
 	}
