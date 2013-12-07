@@ -7,7 +7,7 @@ import processing.core.PApplet;
 
 
 public class Sidebar {
-	int width = 150;
+	int width = 250;
 	int textHeight = 45;
 	int topBuffer = 15;
 	
@@ -37,7 +37,7 @@ public class Sidebar {
 		screen.pushMatrix();
 		
 		screen.textSize(12);
-		screen.textAlign(screen.LEFT);
+		screen.textAlign(PApplet.LEFT);
 		screen.fill(0,0,100);
 		
 		screen.stroke(0,0,0);
@@ -46,7 +46,7 @@ public class Sidebar {
 		screen.fill(255);
 		for (int i=0;i<content.size();i++)
 			screen.text(content.get(i)+": "+data.get(content.get(i)).toString(), 
-					screen.width-this.width, topBuffer+(i*textHeight), width, textHeight);
+					screen.width-this.width+5, topBuffer+(i*textHeight), width, textHeight);
 		screen.popMatrix();
 		screen.popStyle();
 	}

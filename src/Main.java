@@ -33,9 +33,9 @@ public class Main extends PApplet{
 	boolean autoCalib=true;
 	boolean debug = true;
 	boolean Recording = false;
-	boolean compression = false;
 	boolean playback = false;
 	boolean unitMode = false;
+	int compressionMask = 0xf;
 
 	Vector<GestureController> gesture;
 	GestureRecord log;
@@ -46,6 +46,7 @@ public class Main extends PApplet{
 	Sidebar s;
 
 	//selector variables
+	boolean selectorActive = true;
 	float jointSize=(float)7.5;
 	Set<Integer> selected;
 	Map<Integer, PVector> skeleton;
@@ -67,6 +68,7 @@ public class Main extends PApplet{
 		jR.addJoint(SimpleOpenNI.SKEL_LEFT_ELBOW);
 		jR.addJoint(SimpleOpenNI.SKEL_LEFT_HAND);
 		jR.addJoint(SimpleOpenNI.SKEL_LEFT_SHOULDER);
+		System.out.println(jR.toString());
 		//	  jR.addJoint(SimpleOpenNI.SKEL_RIGHT_HAND);
 		//	  jR.addJoint(SimpleOpenNI.SKEL_RIGHT_ELBOW);
 		//	  jR.addAll();
@@ -74,8 +76,8 @@ public class Main extends PApplet{
 		//	  gesture.add(new GestureController("Wave"));
 		//	  createWaveGesture(gesture.lastElement());
 
-		log.addFocusJoints(SimpleOpenNI.SKEL_RIGHT_ELBOW, SimpleOpenNI.SKEL_RIGHT_HAND);
-		//	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND);
+//		log.addFocusJoints(SimpleOpenNI.SKEL_RIGHT_ELBOW, SimpleOpenNI.SKEL_RIGHT_HAND);
+			  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND);
 		//	  log.addFocusJoints(SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
 
 		//	  try{
@@ -122,14 +124,16 @@ public class Main extends PApplet{
 		s = new Sidebar(this);
 		
 		//init collections for selector
-		selected = new HashSet<Integer>();
-		skeleton = new HashMap<Integer, PVector>();
+		initSelector();
+		
 		System.out.println("Setup complete");
 	}
 	public void draw()
 	{
-		PVector mouse = new PVector(mouseX,mouseY, 0);
-//		vK.drawContext(0,mouse, new PVector(-1,-1,-1),width(), height());
+		if (selectorActive){
+			drawSelector();
+			return;
+		}
 		// update the cam
 		context.update();
 
@@ -155,19 +159,19 @@ public class Main extends PApplet{
 				context.convertRealWorldToProjective(rightHand, projRightHand);
 				context.convertRealWorldToProjective(leftHand, projLeftHand);
 
-//				vK.drawContext(userList[i], projLeftHand, projRightHand,width(), height());
+				vK.drawContext(userList[i], projLeftHand, projRightHand,width(), height());
 //				drawSkeleton(userList[i]);
-				drawSkeletonPrime(userList[i]);
+//				drawSkeletonPrime(userList[i]);
 				if(playback){
 					viewRecord();
 					for (int j=0;j<gesture.size();j++)
 						if (gesture.get(j).isComplete(jR, jR.getPlayBackTick())){
 							System.out.println(gesture.get(j).Name);
 						}
-					return;
+//					return;
 				}
-				// else
-					//  drawSkeleton(userList[i]);
+				 else
+					  drawSkeletonPrime(userList[i]);
 
 				//check the gesture for completion
 				for (int j=0;j<gesture.size();j++)
@@ -179,16 +183,26 @@ public class Main extends PApplet{
 				}
 			}
 		}    
-		s.draw();
-		drawSelector();
-	}
-	private void drawSelector(){
-//		background(0);
 		drawSidebar();
+	}
+	private void drawSidebar(){
+		s.update("Tracking Gestures", gesture.size()+"");
+		s.update("jR", jR.toString());
+		s.draw();
+	}
+	private void deactivateSelector(){
+		s.clear("Num Selected");
+		s.clear("Selected");
+		s.clear("Mouse Over");
+		selected.clear();
+		selectorActive = false;
+	}
+	private void initSelector(){
+		selected = new HashSet<Integer>();
+		skeleton = new HashMap<Integer, PVector>();
+		
 		float midx = width()/2;
 		float midy = height()/2;
-		hitNode = null;
-		
 		skeleton.put(Skeleton.TORSO.get(), new PVector(midx, midy));
 		skeleton.put(Skeleton.SHOULDER.left(), new PVector(midx-50, midy-100));
 		skeleton.put(Skeleton.SHOULDER.right(),  new PVector(midx+50, midy-100));
@@ -204,9 +218,15 @@ public class Main extends PApplet{
 		skeleton.put(Skeleton.KNEE.right(), new PVector(skeleton.get(Skeleton.HIP.right()).x+5, skeleton.get(Skeleton.HIP.right()).y+100));
 		skeleton.put(Skeleton.FOOT.left(), new PVector(skeleton.get(Skeleton.KNEE.left()).x-5, skeleton.get(Skeleton.KNEE.left()).y+100));
 		skeleton.put(Skeleton.FOOT.right(), new PVector(skeleton.get(Skeleton.KNEE.right()).x+5, skeleton.get(Skeleton.KNEE.right()).y+100));
+	}
+	private void drawSelector(){
+		background(0);
+		drawSelectorSidebar();
+		
+		hitNode = null;
 		
 		fill(0);
-		stroke(0);
+		stroke(0,0,255);
 		drawLimb(Skeleton.NECK.get(), Skeleton.HEAD.get());
 		drawLimb(Skeleton.SHOULDER.left(), Skeleton.NECK.get());
 		drawLimb(Skeleton.SHOULDER.right(), Skeleton.NECK.get());
@@ -229,7 +249,7 @@ public class Main extends PApplet{
 		
 		drawTextBox();
 	}
-	private void drawSidebar(){
+	private void drawSelectorSidebar(){
 		Iterator<Integer> iter = selected.iterator();
 		String tag=new String();
 		while (iter.hasNext()){
@@ -249,6 +269,7 @@ public class Main extends PApplet{
 	private void drawTextBox(){
 		pushMatrix();
 		pushStyle();
+		stroke(0);
 		int hit=0;
 		if (mouseHit(new PVector(mouseX, mouseY),finish))
 			hit=1;
@@ -257,7 +278,6 @@ public class Main extends PApplet{
 		fill(255*hit);
 		rectMode(CENTER);
 		rect(finish[0],finish[1],finish[2], finish[3]);
-//		fill(255);
 		fill(255*((hit+1)%2));
 		textAlign(CENTER);
 		textSize(12);
@@ -303,7 +323,8 @@ public class Main extends PApplet{
 		else if (mouseHit(new PVector(mouseX, mouseY), finish)){
 			System.out.println("Nodes Selected: "+selected.toString());
 			System.out.println("DONE");
-			selected.clear();
+			jR.addAll(selected);
+			deactivateSelector();
 		}
 	}
 	private void boringShape(PVector corner, int v){
@@ -333,15 +354,15 @@ public class Main extends PApplet{
 					if (!doodle.isEmpty()){
 						//		    		  System.out.println("drawing");
 						stroke(255,0,0);
-						doodle.get(0).mult(-1000);
+						doodle.get(0).mult(-500);
 						boringShape(doodle.get(0),j);
 
 						stroke(0,255,0);
-						doodle.get(1).mult(-1000);
+						doodle.get(1).mult(-500);
 						boringShape(doodle.get(1),j);
 
 						stroke(0,0,255);
-						doodle.get(2).mult(-1000);
+						doodle.get(2).mult(-500);
 						boringShape(doodle.get(2),j);
 
 					}
@@ -357,12 +378,14 @@ public class Main extends PApplet{
 		playback = !playback;
 		System.out.print("Playback mode: ");
 		if(!playback){
+			s.clear("Playback");
 			jR.resetPlayBack();
 			System.out.print("dis");
 		}
 		System.out.println("engaged");
 	}
 	void viewRecord(){
+		s.update("Playback", playback+"");
 		drawSkeleton(jR.playBack());
 	}
 	void drawSkeleton(List<PVector[]> points){
@@ -371,9 +394,10 @@ public class Main extends PApplet{
 			return;
 		}
 		for (PVector[] V : points){
-			//not the best use as that third vector got the axe but I think that
-			//is how simpleOpenNI draws
+			pushStyle();
+			stroke(0,255,0);
 			line (V[0].x, V[0].y, V[1].x, V[1].y);
+			popStyle();
 		}
 	}
 	void printSkeletalConst(){
@@ -418,7 +442,11 @@ public class Main extends PApplet{
 		context.getJointPositionSkeleton(user, Second, Joint);
 		context.convertRealWorldToProjective(Joint, R2);
 		
+		pushStyle();
+		if (jR.contains(First)&& jR.contains(Second))
+			stroke(255,0,0);
 		line(R1.x, R1.y, R2.x, R2.y);
+		popStyle();
 
 	}
 	void drawSkeletonPrime(int userId){
@@ -505,7 +533,11 @@ public class Main extends PApplet{
 			jR.clear();
 		}
 		if (key == 32){ //space
-			if (Recording){
+			if (selectorActive){
+				jR.addAll(selected);
+				deactivateSelector();
+			}
+			else if (Recording){
 				System.out.println("Recording End");
 				Recording = false;
 			}
@@ -515,41 +547,7 @@ public class Main extends PApplet{
 					Recording = true;
 				}
 				else{
-					GestureController g;
-					//					
-					log.record(jR);
-					//					System.out.println(log);
-					g = log.generateGesture(CompressionType.NONE);
-					log.clear();
-					gesture.add(g);
-					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-					System.out.println(g);
-					System.out.println("Gesture "+gesture.size()+" generated");
-
-					log.record(jR);
-					g = log.generateGesture(CompressionType.SIMPLE);
-					log.clear();
-					gesture.add(g);
-					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-					System.out.println(g);
-					System.out.println("Gesture "+gesture.size()+" generated");
-					//					
-					//					log.record(jR);
-					//					g = log.generateGesture(CompressionType.AVG);
-					//					gesture.add(g);
-					//					log.clear();
-					//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-					//					System.out.println(gesture.lastElement());
-					//					System.out.println("Gesture "+gesture.size()+" generated");
-					//					
-					//					log.record(jR);
-					//					g = log.generateGesture(CompressionType.DBL_AVG);
-					//					gesture.add(g);
-					//					gesture.lastElement().Name = "Gesture "+gesture.size()+ " (generated)";
-					//					System.out.println(g);
-					//					System.out.println("Gesture "+gesture.size()+" generated");
-					//					
-					//					jR.clear();
+					processRecording();
 				}
 			}
 		}
@@ -590,12 +588,75 @@ public class Main extends PApplet{
 				System.out.println("Gestures Loaded: "+gesture.size());
 				System.out.println(gesture);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} 
 		}
+		if (key == '/'){
+			if (selectorActive){
+				deactivateSelector();
+			}
+			else{
+				selectorActive = true;
+			}
+		}
 	}
+	private GestureController compressRecord(CompressionType type){
+		GestureController g;
+		
+		log.record(jR);
+		g = log.generateGesture(CompressionType.NONE);
+		if (g == null)
+			return g;
+		
+		log.clear();
+		g.Name = "Gesture "+gesture.size()+ " (generated)";
+		System.out.println(g);
+		return g;
+	}
+	private void processRecording(){
+		GestureController g;
+		if ((compressionMask & CompressionType.NONE.getMask()) != 0){
+			g = compressRecord(CompressionType.NONE);
+			if (g != null){
+				gesture.add(g);
+				System.out.println("Gesture "+gesture.size()+" generated");
+			}
+			else
+				return;
+		}
 
+		if ((compressionMask & CompressionType.SIMPLE.getMask()) != 0){
+			g = compressRecord(CompressionType.SIMPLE);
+			if (g != null){
+				gesture.add(g);
+				System.out.println("Gesture "+gesture.size()+" generated");
+			}
+			else
+				return;
+		}
+
+		if ((compressionMask & CompressionType.AVG.getMask()) != 0){
+			g = compressRecord(CompressionType.AVG);
+			if (g != null){
+				gesture.add(g);
+				System.out.println("Gesture "+gesture.size()+" generated");
+			}
+			else
+				return;
+		}
+
+		if ((compressionMask & CompressionType.DBL_AVG.getMask()) != 0){
+			g = compressRecord(CompressionType.DBL_AVG);
+			if (g != null){
+				gesture.add(g);
+				System.out.println("Gesture "+gesture.size()+" generated");
+			}
+			else
+				return;
+		}
+
+//		jR.clear();
+	}
 	public void onNewUser(int userId)
 	{
 		println("onNewUser - userId: " + userId);

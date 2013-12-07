@@ -74,6 +74,9 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 		
 		return joints.add(j);
 	}
+	public boolean addAll(Collection<Integer> c){
+		return joints.addAll(c);
+	}
 	/**
 	 * Adds all joint locations tracked by SimpleOpenNI into the recorder.
 	 * This is done by calling addLeft(), addright() and addCenter().
@@ -490,7 +493,7 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	public String toString(){
 		String ret = new String();
 		
-		ret += "Number of joints recorded: "+joints.size()+'\n';
+		ret += "Number of joints tracked: "+joints.size()+'\n';
 		ret += "Number of recording ticks: "+recorder.size()+'\n';
 		for (Map<Integer, PVector> m : recorder){
 			ret += m.toString()+'\n';

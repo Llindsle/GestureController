@@ -51,24 +51,33 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 */
 	public enum CompressionType{
 		/**Does not compress the gesture, effectively disabling simplifyGesture*/
-		NONE,
+		NONE(0x1),
 		/**
 		 * Groups the raw data into nodes that are within the same Epsilon range
 		 * by panning through the list and taking the first non-used value to start
 		 * a new node with. Then takes the head of each node as the node value
 		 */
-		SIMPLE,
+		SIMPLE(0x2),
 		/**
 		 * Groups data into Epsilon nodes and then averages across the node to 
 		 * get an approximate value for that node
 		 */
-		AVG,
+		AVG(0x4),
 		/**
 		 * Groups data into Epsilon nodes then takes average, the average values are 
 		 * then used to seed the node sorting process a second time and the average
 		 * of the secondary Epsilon nodes created in this way is taken as the value
 		 */
-		DBL_AVG};
+		DBL_AVG(0x8);
+		
+		private int mask;
+		CompressionType(int m){
+			mask = m;
+		}
+		public int getMask(){
+			return mask;
+		}
+	}
 		
 	/** Used only to toggle debug output */
 	@SuppressWarnings("unused")
@@ -258,6 +267,11 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		
 		//run the regular isComplete function
 		if (isComplete(context, user)){
+			return true;
+		}
+		//neccesary for when the gesture completes so this returns true
+		if (step == sequence.size()){
+			step = 0;
 			logGesture();
 			return true;
 		}
@@ -267,6 +281,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		
 		Euclidean pos;
 		
+		phase = 0;
 		//Add position data using the last angle type available
 		while (phase < sequence.get(step).size()){
 			if (step == 0)
