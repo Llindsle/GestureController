@@ -16,7 +16,7 @@ import controller.xmlGestureParser.xmlStatics;
  * @author Levi Lindsley
  *
  */
-class Pair implements Serializable{
+public class Pair implements Serializable{
 	final private String classTag = "pair";
 	/** First Joint in focus */
 	Integer First;
@@ -29,9 +29,15 @@ class Pair implements Serializable{
 	 * @param f : Value to initialize First with
 	 * @param s : Value to initialize Second with
 	 */
-	Pair(int f, int s){
+	public Pair(int f, int s){
 		First = new Integer(f);
 		Second = new Integer(s);
+	}
+	public Integer getFirst(){
+		return First;
+	}
+	public Integer getSecond(){
+		return Second;
 	}
 	/**
 	 * Override of equals to check for comparison between two JointPairs

@@ -49,8 +49,10 @@ public class Main extends PApplet{
 	boolean selectorActive = true;
 	float jointSize=(float)7.5;
 	Set<Integer> selected;
+	Set<Pair> selectedPair;
 	Map<Integer, PVector> skeleton;
 	Integer hitNode;
+	Integer heldNode;
 	int finish[] = {50,20,75,20};
  
 	public void setup()
@@ -125,6 +127,7 @@ public class Main extends PApplet{
 		
 		//init collections for selector
 		initSelector();
+		activateSelector();
 		
 		System.out.println("Setup complete");
 	}
@@ -190,15 +193,29 @@ public class Main extends PApplet{
 		s.update("jR", jR.toString());
 		s.draw();
 	}
+	private void activateSelector(){
+		jR.getJoints(selected);
+		selectedPair.addAll(log.getFocus());
+		jR.clearFocus();
+		log = new GestureRecord();
+		selectorActive = true;
+	}
 	private void deactivateSelector(){
 		s.clear("Num Selected");
 		s.clear("Selected");
 		s.clear("Mouse Over");
-		selected.clear();
+		jR.addAll(selected);
+		
+		Iterator<Pair> iter = selectedPair.iterator();
+		while (iter.hasNext()){
+			Pair linePair = iter.next();
+			log.addFocusJoints(linePair.getFirst(), linePair.getSecond());
+		}
 		selectorActive = false;
 	}
 	private void initSelector(){
 		selected = new HashSet<Integer>();
+		selectedPair = new HashSet<Pair>();
 		skeleton = new HashMap<Integer, PVector>();
 		
 		float midx = width()/2;
@@ -224,6 +241,7 @@ public class Main extends PApplet{
 		drawSelectorSidebar();
 		
 		hitNode = null;
+		pushStyle();
 		
 		fill(0);
 		stroke(0,0,255);
@@ -246,6 +264,15 @@ public class Main extends PApplet{
 		drawLimb(Skeleton.ELBOW.get(), Skeleton.HAND.get());
 		drawLimb(Skeleton.HIP.get(), Skeleton.KNEE.get());
 		drawLimb(Skeleton.KNEE.get(), Skeleton.FOOT.get());
+		
+		
+		Iterator<Pair> iter = selectedPair.iterator();
+		while (iter.hasNext()){
+			Pair linePair = iter.next();
+			stroke(200,0,0);
+			drawLimb(linePair.getFirst(),linePair.getSecond());
+		}
+		popStyle();
 		
 		drawTextBox();
 	}
@@ -288,18 +315,26 @@ public class Main extends PApplet{
 	private void drawLimb(Integer A, Integer B){
 		PVector First = skeleton.get(A);
 		PVector Second = skeleton.get(B);
+		pushStyle();
 		line(First.x, First.y, Second.x, Second.y);
-		if (selected.contains(B) || mouseHit(new PVector(mouseX, mouseY), Second)){
-			pushStyle();
+		boolean mH = mouseHit(new PVector(mouseX, mouseY), Second);
+		
+		if (selected.contains(B)&& mH){
+			fill(200,0,0);
+			hitNode = B;
+		}
+		else if (mH){
+			fill(240,248,255);
+			hitNode = B;
+		}
+		else if (selected.contains(B)){
 			fill(255);
-			ellipse(Second.x, Second.y, jointSize, jointSize);
-			popStyle();
-			if (!selected.contains(B))
-				hitNode = B;
 		}
 		else{
-			ellipse(Second.x, Second.y, jointSize, jointSize);
+			fill(0);
 		}
+		ellipse(Second.x, Second.y, jointSize, jointSize);
+		popStyle();
 	}
 	private boolean mouseHit(PVector mouse, PVector joint){
 		float deltaX = joint.x -mouse.x;
@@ -316,15 +351,42 @@ public class Main extends PApplet{
 		return false;
 	}
 	public void mouseClicked(){
+		if (!selectorActive)
+			return;
+		
 		if (hitNode != null){
 //			println(hitNode);
-			selected.add(hitNode);
+			if (selected.contains(hitNode))
+				selected.remove(hitNode);
+			else
+				selected.add(hitNode);
 		}
 		else if (mouseHit(new PVector(mouseX, mouseY), finish)){
 			System.out.println("Nodes Selected: "+selected.toString());
 			System.out.println("DONE");
-			jR.addAll(selected);
 			deactivateSelector();
+		}
+	}
+	public void mousePressed(){
+		if (!selectorActive)
+			return;
+		if (hitNode != null){
+			heldNode = hitNode;
+		}
+		else
+			heldNode = null;
+	}
+	public void mouseReleased(){
+		if (!selectorActive)
+			return;
+		if (hitNode != null && heldNode != null){
+			selected.add(heldNode);
+			selected.add(hitNode);
+			Pair selection = new Pair(heldNode, hitNode);
+			if (selectedPair.contains(selection))
+				selectedPair.remove(selection);
+			else
+				selectedPair.add(new Pair(heldNode, hitNode));
 		}
 	}
 	private void boringShape(PVector corner, int v){
@@ -534,7 +596,6 @@ public class Main extends PApplet{
 		}
 		if (key == 32){ //space
 			if (selectorActive){
-				jR.addAll(selected);
 				deactivateSelector();
 			}
 			else if (Recording){
@@ -596,7 +657,7 @@ public class Main extends PApplet{
 				deactivateSelector();
 			}
 			else{
-				selectorActive = true;
+				activateSelector();
 			}
 		}
 	}

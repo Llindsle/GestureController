@@ -467,6 +467,9 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	public boolean isEmpty(){
 		return recorder.isEmpty();
 	}
+	public void getJoints(Collection<Integer> j){
+		j.addAll(joints);
+	}
 	/**
 	 * Clears the recorder, deleting the current recording, isEmpty() will
 	 * return true after this is called until record() is called. Focus joints
