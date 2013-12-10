@@ -17,6 +17,11 @@ public class VirtualKitchen {
 	String location = "";
 	boolean rightHand = true;
 	int maxUsers = 5;
+	int potposition = 0;
+	int knifeposition = 0;
+	int chopcounter = 0;
+	int knifepause = 0;
+	boolean knifeoncounter = false;
 	
 	PApplet screen;
 	Sidebar sidebar;
@@ -68,12 +73,12 @@ public class VirtualKitchen {
 				pot(left.x+40, left.y);
 
 			if (lidOnPot)
-			{
-				if (rightHand)
-					lid(right.x+40+50, right.y-10);
-				else
-					lid(left.x+40+50, left.y-10);
-			}
+			 {
+			 if (rightHand)
+			 lid(right.x+40+50+potposition, right.y-10);
+			 else
+			 lid(left.x+40+50+potposition, left.y-10);
+			 }
 			object = getBottomOfPot();
 		}
 		else
@@ -145,9 +150,9 @@ public class VirtualKitchen {
 		if (holdKnife)
 		{
 			if (rightHand)
-				knife(right.x, right.y);
+				 knife(right.x-20, right.y-5);
 			else
-				knife(left.x, left.y);
+				 knife(left.x-20, left.y-5);
 			object = getBottomOfKnife();
 		}
 		else
@@ -249,55 +254,98 @@ public class VirtualKitchen {
 	}
 	void dropObject()
 	{
-		if ((object[0] >= 0 && object[0] <= 200) || (object[0] >= width - 150 && object[0] <= width))
-		{
-			if (object[0] >= 0 && object[0] <= 200)
-				location = "counter";
-			if (object[0] >= width - 150 && object[0] <= width)
-				location = "stove";
 
-			if (object[1] >= 2*height/3 && object[1] <= 2*height/3 + 10)
-			{
-				holdPot = false;
-				holdSpoon = false;
-				holdLid = false;
-				holdKnife = false;
-				somethingInHand = false;
-				drop();
+	  if ((object[0] >= 0 && object[0] <= 200) || (object[0] >= width - 150 && object[0] <= width))
+	  {
+	    if (object[0] >= 0 && object[0] <= 200)
+	      location = "counter";
+	    if (object[0] >= width - 150 && object[0] <= width)
+	      location = "stove";
 
-				pause = 0;
-			}
+	    if (holdKnife)
+	    {
+	      //if the knife touches the top of the counter - start chopping gesture
+	      if (!knifeoncounter && object[1] >= 2*height/3 && object[1] <= 2*height/3 + 10)
+	      {
+	        chopcounter++;
+	        knifeoncounter = true;
+	        if (chopcounter >= 5)
+	        {
+	          holdKnife = false;
+	          somethingInHand = false;
+	          knifeoncounter = false;
+	          chopcounter = 0;
+	         gesture("Chop something with " + heldObject + " on " + location);
+	          pause = 0;
+	        }
+	      }
+	      //bring the knife back up above the counter
+	      else if (object[1] <= 2*height/3 && knifeoncounter)
+	      {
+	        knifeoncounter = false;
+	      }
+	      else if (object[1] >= 2*height/3 + 20)
+	      {
+	        //drop knife on top of counter/stove by dragging it past the top
+	        //instead of chopping, go further down the screen to let go of it
+	        knife(knifex, 2*height/3-30);
+	        holdKnife = false;
+	        somethingInHand = false;
+	        chopcounter = 0;
+	        pause = 0;
+	        drop();
+	      }
+	    }
+	    else if (object[1] >= 2*height/3 && object[1] <= 2*height/3 + 20)
+	    {
+	      holdPot = false;
+	      holdSpoon = false;
+	      holdLid = false;
+	      holdKnife = false;
+	      somethingInHand = false;
+	      drop();
 
-			//put lid on pot
-			if (holdLid)
-			{
-				if (object[0] > potx+40 && object[0] < potx+60 &&
-						object[1] > poty-5 && object[1] < poty+5)
-				{
-					holdLid = false;
-					lidOnPot = true;
-					somethingInHand = false;
-					pause = 0;
-					lid(potx+50, poty-10);
-					gesture("Cover Pot");
-				}
-			}
-		}
+	      pause = 0;
+	    }
+
+	    //put lid on pot
+	    if (holdLid)
+	    {
+	      if (object[0] > potx+40+potposition && object[0] < potx+60+potposition &&
+	        object[1] > poty-5 && object[1] < poty+5)
+	      {
+	        holdLid = false;
+	        lidOnPot = true;
+	        somethingInHand = false;
+	        pause = 0;
+	        lid(potx+50+potposition, poty-10);
+	        gesture("Cover Pot");
+	      }
+	    }
+	  }
+	  else
+	  {
+	    chopcounter = 0;
+	  }
 	}
-
+	
 	void knife(float x, float y)
 	{
 		knifex = x;
 		knifey = y;
 		screen.fill(0);
 		screen.rect(x, y, 40, 10);
-		screen.triangle(x+40, y, x+120, y, x+40, y+30);
+		if (x < width/2)
+			knifeposition = -40;
+		else
+			knifeposition = 0;
+		screen.triangle(x+40+knifeposition, y, x+120+knifeposition*5, y, x+40+knifeposition, y+30);
 	}
 
 	float[] getBottomOfKnife()
 	{
 		float[] temp = {
-				knifex+40, knifey+30
+				knifex+40+knifeposition, knifey+30
 		};
 		return temp;
 	}
@@ -318,29 +366,33 @@ public class VirtualKitchen {
 		};
 		return temp;
 	}
-
+	
 	void pot(float x, float y)
 	{
-		potx = x;
-		poty = y;
-		screen.fill(0);
-		//main part of pot
-		screen.rect(x, y, 100, 50);
-		//bottom of pot
-		screen.ellipse(x+50, y+50, 100, 20);
-		//handle
-		screen.quad(x, y, x, y+10, x-75, y+10, x-75, y);
-		screen.fill(200);
-		//top of pot
-		screen.ellipse(x+50, y, 100, 20);
+	 if (x < width/2)
+	 potposition = -175;
+	 else
+	 potposition = 0;
+	 potx = x;
+	 poty = y;
+	 screen.fill(0);
+	 //main part of pot
+	 screen.rect(x+potposition, y, 100, 50);
+	 //bottom of pot
+	 screen.ellipse(x+50+potposition, y+50, 100, 20);
+	 //handle
+	 screen.rect(x, y, -75, 10);
+	 screen.fill(200);
+	 //top of pot
+	 screen.ellipse(x+50+potposition, y, 100, 20);
 	}
 
 	float[] getBottomOfPot()
 	{
-		float[] temp = {
-				potx+50, poty+60
-		};
-		return temp;
+	 float[] temp = {
+	 potx+50+potposition, poty+60
+	 };
+	 return temp;
 	}
 
 	void spoon(float x, float y)

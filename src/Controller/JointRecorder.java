@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -406,13 +407,26 @@ public class JointRecorder implements xmlGestureParser<JointRecorder>{
 	 * @return
 	 */
 	public List<PVector []> playBack(int tick, Vector<Pair> focus){
-		Set<Integer> f = new TreeSet<Integer>();
-		for (Pair p : focus){
-			f.add(p.First);
-			f.add(p.Second);
+		Set<Integer> f = new HashSet<Integer>();
+		Iterator<Pair> iter = focus.iterator();
+		List<PVector []> l = new ArrayList<PVector []>();
+		while (iter.hasNext()){
+			Pair next = iter.next();
+			f.add(next.getFirst());
+			f.add(next.getSecond());
+			
+			l.add(getJointPosition(tick, next.getFirst(), next.getSecond(), f));
 		}
-		return playBack(tick,f);
+		return l;
 	}
+	public List<PVector []> playBack(Vector<Pair> focus){
+		playBackTick ++;
+		if (playBackTick > recorder.size()){
+			return null;
+		}
+		return playBack(playBackTick-1, focus);
+	}
+	
 	/**
 	 * Retrieves the position of two joints as specified by con1 and con2
 	 * the joints are only retrieved if both contained in this and in focus.

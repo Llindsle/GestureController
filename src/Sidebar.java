@@ -12,24 +12,24 @@ public class Sidebar {
 	int topBuffer = 15;
 	
 	private PApplet screen;
-	private Vector<String> content;
+	private Vector<String> keyStack;
 	private Map<String, String> data;
 	
 
 	Sidebar(PApplet p){
 		screen = p;
-		content = new Vector<String>();
+		keyStack = new Vector<String>();
 		data = new HashMap<String, String>();
 		screen.resize(screen.width+this.width, screen.height);
 	}
 	void update(String key, String value){
 		if (!data.containsKey(key)){
-			content.add(key);
+			keyStack.add(key);
 		}
 		data.put(key, value);
 	}
 	void clear(String key){
-		content.remove(key);
+		keyStack.remove(key);
 		data.remove(key);
 	}
 	void draw(){
@@ -44,8 +44,8 @@ public class Sidebar {
 		screen.strokeWeight(2);
 		screen.rect(screen.width-this.width, 0, screen.width, screen.height);
 		screen.fill(255);
-		for (int i=0;i<content.size();i++)
-			screen.text(content.get(i)+": "+data.get(content.get(i)).toString(), 
+		for (int i=0;i<keyStack.size();i++)
+			screen.text(keyStack.get(i)+": "+data.get(keyStack.get(i)).toString(), 
 					screen.width-this.width+5, topBuffer+(i*textHeight), width, textHeight);
 		screen.popMatrix();
 		screen.popStyle();

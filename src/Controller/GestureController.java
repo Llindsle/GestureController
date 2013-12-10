@@ -24,15 +24,15 @@ import SimpleOpenNI.*;
  * be done at the same time, all consecutive steps appearing in sequence should have unique joint
  * pairs or it will not be possible to complete the gesture. If a step is declared concurrent there
  * must be a step following it.
+ * <p>
  * Gestures may be further constrained by the addition of constant constraints that must be met
  * at every step or the gesture will be considered failed. Constant constraints are not required
  * to declare a relationship for all three axes, declaring an axis to be null will disregard that
  * axis while calculating if the constraint is upheld.
- *  
- * 
+ * <p>
  * An instance of this class should be used for each individual gesture.
- *
- *Bugs:
+ * 
+ *@Bug
  * Currently does NOT work with multiple users.
  * Probably some with relation to concurrent and constant constraints not much testing has been done
  * 
@@ -42,33 +42,56 @@ import SimpleOpenNI.*;
 public class GestureController implements xmlGestureParser<GestureController>{
 	/**Generated serivalVersionUID for serialization*/
 	private static final long serialVersionUID = -8833922512663458603L;
+
+	/**
+	 * A simple enum to toggle between different coordinate projections.
+	 * PROJ converts the real world data into screen projection and then
+	 * processes, while REAL leaves the data as real world coordinates
+	 * this has more usable data present in it but does not seem to draw 
+	 * as nice. Gestures recorded with REAL are far more fine-grained that
+	 * any encoded with PROJ, this reduces false positives but also makes
+	 * completing the gesture far harder so the toggle is available for 
+	 * specific applications to make use of.
+	 * 
+	 * @see GestureController#projType The only instance of this
+	 * @author Levi Lindsley
+	 *
+	 */
+	private enum CoordType{PROJ, REAL};
+	
 	/**
 	 * Different types of compression available for use on a gesture
 	 * The compression ranges from least(NONE), to most(DBL_AVG).
-	 * 
-	 * DBL_AVG is currently not behaving as expected.
+	 * The mask values for each are as follows: NONE = 0x1, SIMPLE = 0x2, 
+	 * AVG = 0x4, DBL_AVG = 0x8. 
+	 * <p>
+	 * DBL_AVG may and or may not work as expected it gets reworked often.
 	 * 
 	 * @author Levi Lindsley
 	 *
 	 */
 	public enum CompressionType{
-		/**Does not compress the gesture, effectively disabling simplifyGesture*/
+		/**Does not compress the gesture, effectively disabling simplifyGesture
+		 * <p> mask = 0x1*/
 		NONE(0x1),
 		/**
 		 * Groups the raw data into nodes that are within the same Epsilon range
 		 * by panning through the list and taking the first non-used value to start
 		 * a new node with. Then takes the head of each node as the node value
+		 * <p> mask = 0x2
 		 */
 		SIMPLE(0x2),
 		/**
 		 * Groups data into Epsilon nodes and then averages across the node to 
 		 * get an approximate value for that node
+		 * <p> mask = 0x4
 		 */
 		AVG(0x4),
 		/**
 		 * Groups data into Epsilon nodes then takes average, the average values are 
 		 * then used to seed the node sorting process a second time and the average
 		 * of the secondary Epsilon nodes created in this way is taken as the value
+		 * <p> mask = 0x8
 		 */
 		DBL_AVG(0x8);
 		
@@ -105,6 +128,15 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	/** Used to enable/disable logging completion of a gesture*/
 	private static BufferedWriter logWriter;
 	
+	/**
+	 * This is used in conjunction with {@linkplain #getRealCoordinites(SimpleOpenNI, int, int) 
+	 * getRealCoordinites()} to determine the type of coordinate that should be
+	 * returned.
+	 * <p> For information on the differences see {@link CoordType}
+	 * @see #toggleProjectionType()
+	 */
+	private static CoordType projType = CoordType.REAL;
+	
 	/**The Sequence of joint relationships describing the gesture */
 	private Vector<Vector<JointRelation>> sequence; 
 	
@@ -117,6 +149,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	public String Name;
 
 	/** 
+	 * USE INSTEAD: {@link Euclidean#Epsilon}<p>
 	 * Epsilon used to widen zero, modifying this will make zero have a larger range and thus
 	 * be easier to hit but will decrease the sensitivity of noting when joints are not aligned
 	 * <p>
@@ -125,6 +158,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * <p>
 	 * Change with caution.
 	 * @see Euclidean#Epsion
+	 * @deprecated
 	 */
 	private static Double Epsilon = Euclidean.getEpsilon(); 
 	
@@ -421,6 +455,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 * 		-1 : x < (x2-Epsilon)
 	 */
 	protected static int comp(double x, double x2){
+		Double Epsilon = Euclidean.getEpsilon();
 		if ((x2+Epsilon)>= x && (x2-Epsilon) <= x)
 			return 0;
 		else if ((x2+Epsilon) < x )
@@ -581,8 +616,12 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		//convert data into projective data this seems more useful for comparison
 		//the raw data may work just as well though not sure so I use this
 		c.convertRealWorldToProjective(proj, real);
-		return real;
-//		return proj;
+		
+		//return the appropriate coordinate type
+		if (projType == CoordType.REAL)
+			return real;
+		else // if (projType == CoordType.PROJ) the equivalent of this else
+			return proj; 
 	}
 	/**
 	 * Checks the next step to see if the skeletal model derived from context matches the expected
@@ -684,6 +723,8 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	protected void simplifyGesture(CompressionType type){
 		//If no compression then return
 		if (type == CompressionType.NONE) return;
+		
+		link.clear();
 		
 		//array to track what elements have been reduced already
 		boolean reduced[] = new boolean[sequence.size()];
@@ -1102,20 +1143,37 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	}
 	/**
 	 * Modifies Epsilon by delta, a positive delta will make position detection less 
-	 * sensitive and a negative delta will make detection more sensitive.
-	 * 
+	 * sensitive and a negative delta will make detection more sensitive. This changes
+	 * {@link Euclidean#Epsilon} as that is what this is based from.
 	 * 
 	 * @param delta : change of Epsilon
+	 * @deprecated
+	 * @see {@link Euclidean#changeEpsilon(Double)}
 	 */
 	public void changeTolerance(double delta){
 		Euclidean.changeEpsilon(delta);
 		Epsilon = Euclidean.getEpsilon();
 	}
 	/** 
+	 * Returns the value of {@link Euclidean#Epsilon}
+	 * 
 	 * @return value of Epsilon
+	 * @see Euclidean#getEpsilon()
 	 */
 	public static Double getTolerance(){
-		return Epsilon.doubleValue();
+		return Euclidean.getEpsilon();
+	}
+	public static String getProjectionType(){
+		if (projType == CoordType.REAL)
+			return "REAL";
+		else
+			return "PROJ";
+	}
+	public static void toggleProjectionType(){
+		if (projType == CoordType.REAL)
+			projType = CoordType.PROJ;
+		else
+			projType = CoordType.REAL;
 	}
 	/**
 	 * Enables logging of gestures upon completion, gestures will be logged
@@ -1446,6 +1504,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 	 */
 	public void clear(){
 		sequence.clear();
+		link.clear();
 	}
 	public String toString(){
 		String info = new String();
@@ -1474,7 +1533,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		
 		content +="<?xml version=\"1.0\"?>"+'\n';
 		content +="<root>"+'\n';
-		content += xmlStatics.createElement("epsilon",Epsilon.toString());
+//		content += xmlStatics.createElement("epsilon",Epsilon.toString());
 		xmlGestureParser.xmlStatics.write(wr,content);
 		
 		for(GestureController c : g){
@@ -1498,7 +1557,7 @@ public class GestureController implements xmlGestureParser<GestureController>{
 		
 		content +="<?xml version=\"1.0\"?>"+'\n';
 		content +="<root>"+'\n';
-		content += xmlStatics.createElement("epsilon", Epsilon.toString());
+//		content += xmlStatics.createElement("epsilon", Epsilon.toString());
 		content += toXML();
 		content +="</root>"; 
 		xmlStatics.write(wr,content);

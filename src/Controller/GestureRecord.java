@@ -193,6 +193,13 @@ public class GestureRecord extends GestureController{
 		return s;
 	}
 	/**
+	 * @return
+	 * Size of focus
+	 */
+	public int focusSize(){
+		return Focus.size();
+	}
+	/**
 	 * Clear all recorded data, focus pairs are preserved.
 	 */
 	public void clear(){

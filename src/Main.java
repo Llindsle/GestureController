@@ -1,20 +1,11 @@
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Scanner;
-import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -29,38 +20,48 @@ import processing.core.*;
 public class Main extends PApplet{
 	/** A serialVersionUID to make eclipse happy*/
 	private static final long serialVersionUID = 1L;
+	
+	/** Active SimpleOpenNI instance that is used to interact with kinect*/
 	SimpleOpenNI  context;
+	
+	//Various flags
 	boolean autoCalib=true;
 	boolean debug = true;
 	boolean Recording = false;
 	boolean playback = false;
 	boolean unitMode = false;
+	boolean selectorActive = true;
+	boolean kitchenActive = false;
+	boolean ghost = true;
+	
+	/**Compression type used to compress gesture into different types to 
+	 * view values and differences see {@link CompressionType}*/
 	int compressionMask = 0xf;
 
+	//
+	//GestureController and friends
+	//
+	/**Vector of gesture controllers that hold all gestures to track*/
 	Vector<GestureController> gesture;
+	
+	/**A gesture recorder instance, used for direct recording or parsing
+	 * the JointRecorder*/
 	GestureRecord log;
+	
+	/**A JointRecorder used as the primary recording method, also used
+	 * for playback and drawn skeletons may be color coded depending on
+	 * what is tracked by this.*/
 	JointRecorder jR;
-	int color = 0;
 
+	//instances of other things that may draw on a PApplet
 	VirtualKitchen vK;
 	Sidebar s;
+	SkeletalSelector skelSel;
 
-	//selector variables
-	boolean selectorActive = true;
-	float jointSize=(float)7.5;
-	Set<Integer> selected;
-	Set<Pair> selectedPair;
-	Map<Integer, PVector> skeleton;
-	Integer hitNode;
-	Integer heldNode;
-	int finish[] = {50,20,75,20};
  
 	public void setup()
 	{	
 		context = new SimpleOpenNI(this);
-//		printSkeletalConst();
-//		boolean b= true;
-//		if (b) return;
 		
 		gesture = new Vector<GestureController>();
 		log = new GestureRecord();
@@ -125,36 +126,39 @@ public class Main extends PApplet{
 		
 		//create VirtualKitchen
 		vK = new VirtualKitchen(this,s);
-		
-		//init collections for selector
-		initSelector();
+		skelSel = new SkeletalSelector(this, new Sidebar(this), width(), height());
 		activateSelector();
 		
 		System.out.println("Setup complete");
 	}
 	public void draw()
 	{
+		//if the skeleton selector is active it gets priority
+		//and is the only thing drawn so it is in focus and on top.
 		if (selectorActive){
-			drawSelector();
+			skelSel.draw();
 			return;
 		}
+		
 		// update the cam
 		context.update();
-
+		// draw depthImageMap
+		image(context.depthImage(),0,0);
+		
+		//if unitMode is active then draw whatever it wants
+		//as opposed to the standard screen image.
 		if (unitMode){
 			unitDraw();
 			return;
 		}
-		// draw depthImageMap
-		image(context.depthImage(),0,0);
 
-		//	  stroke (255,0,color);
-		//	  color = (color+1)%255;
 		// draw the skeleton if it's available
 		int[] userList = context.getUsers();
 		for(int i=0;i<userList.length;i++)
 		{
 			if(context.isTrackingSkeleton(userList[i])){
+				
+				//get the things the virtualKitchen needs
 				PVector leftHand = new PVector(), projLeftHand = new PVector();
 				PVector rightHand = new PVector(), projRightHand = new PVector();
 				context.getJointPositionSkeleton(userList[i], SimpleOpenNI.SKEL_LEFT_HAND, leftHand);
@@ -163,16 +167,17 @@ public class Main extends PApplet{
 				context.convertRealWorldToProjective(rightHand, projRightHand);
 				context.convertRealWorldToProjective(leftHand, projLeftHand);
 
-				vK.drawContext(userList[i], projLeftHand, projRightHand,width(), height());
-//				drawSkeleton(userList[i]);
-//				drawSkeletonPrime(userList[i]);
+				if (kitchenActive)
+					vK.drawContext(userList[i], projLeftHand, projRightHand,width(), height());
+
 				if(playback){
 					viewRecord();
 					for (int j=0;j<gesture.size();j++)
 						if (gesture.get(j).isComplete(jR, jR.getPlayBackTick())){
-							System.out.println(gesture.get(j).Name);
+							System.out.println("R:"+gesture.get(j).Name);
 						}
-//					return;
+					if (ghost)
+						drawSkeletonPrime(userList[i]);
 				}
 				 else
 					  drawSkeletonPrime(userList[i]);
@@ -181,6 +186,7 @@ public class Main extends PApplet{
 				for (int j=0;j<gesture.size();j++)
 					if (gesture.get(j).isComplete(context, userList[i])){
 						System.out.println(gesture.get(j).Name);
+						s.update("Completed Gesture", gesture.get(j).Name+'\n'+"At: "+System.currentTimeMillis()+"");
 					}
 				if (Recording){
 					jR.record(context, userList[i]);
@@ -189,207 +195,34 @@ public class Main extends PApplet{
 		}    
 		drawSidebar();
 	}
+	void initHelp(){
+		
+	}
 	private void drawSidebar(){
 		s.update("Tracking Gestures", gesture.size()+"");
 		s.update("jR", jR.toString());
 		s.draw();
 	}
 	private void activateSelector(){
-		jR.getJoints(selected);
-		selectedPair.addAll(log.getFocus());
+		jR.getJoints(skelSel.selected);
+		skelSel.selectedPair.addAll(log.getFocus());
 		jR.clearFocus();
 		log = new GestureRecord();
+		
 		selectorActive = true;
 	}
 	private void deactivateSelector(){
-		s.clear("Num Selected");
-		s.clear("Selected");
-		s.clear("Mouse Over");
-		jR.addAll(selected);
+		jR.addAll(skelSel.selected);
 		
-		Iterator<Pair> iter = selectedPair.iterator();
+		Iterator<Pair> iter = skelSel.selectedPair.iterator();
 		while (iter.hasNext()){
 			Pair linePair = iter.next();
 			log.addFocusJoints(linePair.getFirst(), linePair.getSecond());
 		}
+		
 		selectorActive = false;
 	}
-	private void initSelector(){
-		selected = new HashSet<Integer>();
-		selectedPair = new HashSet<Pair>();
-		skeleton = new HashMap<Integer, PVector>();
-		
-		float midx = width()/2;
-		float midy = height()/2;
-		skeleton.put(Skeleton.TORSO.get(), new PVector(midx, midy));
-		skeleton.put(Skeleton.SHOULDER.left(), new PVector(midx-50, midy-100));
-		skeleton.put(Skeleton.SHOULDER.right(),  new PVector(midx+50, midy-100));
-		skeleton.put(Skeleton.NECK.get(), new PVector(midx, skeleton.get(Skeleton.SHOULDER.left()).y-10));
-		skeleton.put(Skeleton.HEAD.get(), new PVector(skeleton.get(Skeleton.NECK.get()).x, skeleton.get(Skeleton.NECK.get()).y-35));
-		skeleton.put(Skeleton.HIP.left(), new PVector(midx-50, midy+100));
-		skeleton.put(Skeleton.HIP.right(), new PVector(midx+50, midy+100));
-		skeleton.put(Skeleton.ELBOW.left(), new PVector(skeleton.get(Skeleton.TORSO.get()).x-85, skeleton.get(Skeleton.TORSO.get()).y-40));
-		skeleton.put(Skeleton.ELBOW.right(), new PVector(skeleton.get(Skeleton.TORSO.get()).x+85, skeleton.get(Skeleton.TORSO.get()).y-40));
-		skeleton.put(Skeleton.HAND.left(), new PVector(skeleton.get(Skeleton.HIP.left()).x-35, skeleton.get(Skeleton.HIP.left()).y+10));
-		skeleton.put(Skeleton.HAND.right(), new PVector(skeleton.get(Skeleton.HIP.right()).x+35, skeleton.get(Skeleton.HIP.right()).y+10));
-		skeleton.put(Skeleton.KNEE.left(), new PVector(skeleton.get(Skeleton.HIP.left()).x-5, skeleton.get(Skeleton.HIP.left()).y+100));
-		skeleton.put(Skeleton.KNEE.right(), new PVector(skeleton.get(Skeleton.HIP.right()).x+5, skeleton.get(Skeleton.HIP.right()).y+100));
-		skeleton.put(Skeleton.FOOT.left(), new PVector(skeleton.get(Skeleton.KNEE.left()).x-5, skeleton.get(Skeleton.KNEE.left()).y+100));
-		skeleton.put(Skeleton.FOOT.right(), new PVector(skeleton.get(Skeleton.KNEE.right()).x+5, skeleton.get(Skeleton.KNEE.right()).y+100));
-	}
-	private void drawSelector(){
-		background(0);
-		drawSelectorSidebar();
-		
-		hitNode = null;
-		pushStyle();
-		
-		fill(0);
-		stroke(0,0,255);
-		drawLimb(Skeleton.NECK.get(), Skeleton.HEAD.get());
-		drawLimb(Skeleton.SHOULDER.left(), Skeleton.NECK.get());
-		drawLimb(Skeleton.SHOULDER.right(), Skeleton.NECK.get());
-		drawLimb(Skeleton.SHOULDER.left(), Skeleton.TORSO.get());
-		drawLimb(Skeleton.SHOULDER.right(), Skeleton.TORSO.get());
-		drawLimb(Skeleton.TORSO.get(), Skeleton.HIP.left());
-		drawLimb(Skeleton.TORSO.get(), Skeleton.HIP.right());
-		
-		Skeleton.setDefaultLeft();
-		drawLimb(Skeleton.SHOULDER.get(), Skeleton.ELBOW.get());
-		drawLimb(Skeleton.ELBOW.get(), Skeleton.HAND.get());
-		drawLimb(Skeleton.HIP.get(), Skeleton.KNEE.get());
-		drawLimb(Skeleton.KNEE.get(), Skeleton.FOOT.get());
-		
-		Skeleton.setDefaultRight();
-		drawLimb(Skeleton.SHOULDER.get(), Skeleton.ELBOW.get());
-		drawLimb(Skeleton.ELBOW.get(), Skeleton.HAND.get());
-		drawLimb(Skeleton.HIP.get(), Skeleton.KNEE.get());
-		drawLimb(Skeleton.KNEE.get(), Skeleton.FOOT.get());
-		
-		
-		Iterator<Pair> iter = selectedPair.iterator();
-		while (iter.hasNext()){
-			Pair linePair = iter.next();
-			stroke(200,0,0);
-			drawLimb(linePair.getFirst(),linePair.getSecond());
-		}
-		popStyle();
-		
-		drawTextBox();
-	}
-	private void drawSelectorSidebar(){
-		Iterator<Integer> iter = selected.iterator();
-		String tag=new String();
-		while (iter.hasNext()){
-			tag += iter.next().toString();
-			if (iter.hasNext())
-				tag+= ", ";
-		}
-		Integer i = selected.size();
-		s.update("Num Selected", i.toString());
-		s.update("Selected", tag);
-		if (hitNode != null)
-			s.update("Mouse Over", hitNode.toString());
-		else
-			s.clear("Mouse Over");
-		s.draw();
-	}
-	private void drawTextBox(){
-		pushMatrix();
-		pushStyle();
-		stroke(0);
-		int hit=0;
-		if (mouseHit(new PVector(mouseX, mouseY),finish))
-			hit=1;
-		else
-			hit=0;
-		fill(255*hit);
-		rectMode(CENTER);
-		rect(finish[0],finish[1],finish[2], finish[3]);
-		fill(255*((hit+1)%2));
-		textAlign(CENTER);
-		textSize(12);
-		text("Done", finish[0],finish[1]+5);
-		popMatrix();
-		popStyle();
-	}
-	private void drawLimb(Integer A, Integer B){
-		PVector First = skeleton.get(A);
-		PVector Second = skeleton.get(B);
-		pushStyle();
-		line(First.x, First.y, Second.x, Second.y);
-		boolean mH = mouseHit(new PVector(mouseX, mouseY), Second);
-		
-		if (selected.contains(B)&& mH){
-			fill(200,0,0);
-			hitNode = B;
-		}
-		else if (mH){
-			fill(240,248,255);
-			hitNode = B;
-		}
-		else if (selected.contains(B)){
-			fill(255);
-		}
-		else{
-			fill(0);
-		}
-		ellipse(Second.x, Second.y, jointSize, jointSize);
-		popStyle();
-	}
-	private boolean mouseHit(PVector mouse, PVector joint){
-		float deltaX = joint.x -mouse.x;
-		float deltaY = joint.y-mouse.y;
-		if (sqrt(sq(deltaX)+sq(deltaY)) < jointSize){
-			return true;
-		}
-		return false;
-	}
-	private boolean mouseHit(PVector mouse, int [] box){
-		if (mouse.x >= box[0]-(box[2]/2) && mouse.x <= box[0]+(box[2]/2))
-			if (mouse.y >= box[1]-(box[3]/2)&& mouse.y <= box[1]+(box[3]/2))
-				return true;
-		return false;
-	}
-	public void mouseClicked(){
-		if (!selectorActive)
-			return;
-		
-		if (hitNode != null){
-//			println(hitNode);
-			if (selected.contains(hitNode))
-				selected.remove(hitNode);
-			else
-				selected.add(hitNode);
-		}
-		else if (mouseHit(new PVector(mouseX, mouseY), finish)){
-			System.out.println("Nodes Selected: "+selected.toString());
-			System.out.println("DONE");
-			deactivateSelector();
-		}
-	}
-	public void mousePressed(){
-		if (!selectorActive)
-			return;
-		if (hitNode != null){
-			heldNode = hitNode;
-		}
-		else
-			heldNode = null;
-	}
-	public void mouseReleased(){
-		if (!selectorActive)
-			return;
-		if (hitNode != null && heldNode != null){
-			selected.add(heldNode);
-			selected.add(hitNode);
-			Pair selection = new Pair(heldNode, hitNode);
-			if (selectedPair.contains(selection))
-				selectedPair.remove(selection);
-			else
-				selectedPair.add(new Pair(heldNode, hitNode));
-		}
-	}
+	
 	private void boringShape(PVector corner, int v){
 		if (corner.equals(new PVector(0,0,0)))
 			return;
@@ -449,7 +282,10 @@ public class Main extends PApplet{
 	}
 	void viewRecord(){
 		s.update("Playback", playback+"");
-		drawSkeleton(jR.playBack());
+		if (log.focusSize() == 0)
+			drawSkeleton(jR.playBack());
+		else
+			drawSkeleton(jR.playBack(log.getFocus()));
 	}
 	void drawSkeleton(List<PVector[]> points){
 		if (points == null){
@@ -458,7 +294,7 @@ public class Main extends PApplet{
 		}
 		for (PVector[] V : points){
 			pushStyle();
-			stroke(0,255,0);
+			stroke(255,255,255);
 			line (V[0].x, V[0].y, V[1].x, V[1].y);
 			popStyle();
 		}
@@ -499,37 +335,41 @@ public class Main extends PApplet{
 		PVector R1 = new PVector();
 		PVector R2 = new PVector();
 		
-		//get joint data from context as determined by the c
+		//get joint data from context and convert to projection
 		context.getJointPositionSkeleton(user, First, Joint);
 		context.convertRealWorldToProjective(Joint, R1);
 		context.getJointPositionSkeleton(user, Second, Joint);
 		context.convertRealWorldToProjective(Joint, R2);
 		
 		pushStyle();
-		if (jR.contains(Second))
-			fill(255,0,0);
-		else
-			fill(0);
-		ellipse(R2.x, R2.y, jointSize, jointSize);
-		//returns false if they exist
+		
+		//draw line between joints
 		if (log.contains(new Pair(First, Second)))
 			stroke(255,0,0);
 		else
 			stroke(0,0,255);
 		line(R1.x, R1.y, R2.x, R2.y);
 		popStyle();
+		
+		//draw joint
+		if (jR.contains(Second)){
+			fill(255,0,0);
+			stroke(255,0,0);
+		}
+		else{
+			fill(0);
+			stroke(0);
+		}
+		ellipse(R2.x, R2.y, skelSel.jointSize, skelSel.jointSize);
+
 
 	}
+	//draw a colored skeleton with visible joints
 	void drawSkeletonPrime(int userId){
-		// to get the 3d joint data
-		/*
-	  PVector jointPos = new PVector();
-	  context.getJointPositionSkeleton(userId,SimpleOpenNI.SKEL_NECK,jointPos);
-	  println(jointPos);
-		 */
 		strokeWeight(2);
 		stroke(0);
 		drawLimb(userId, Skeleton.NECK.get(), Skeleton.HEAD.get());
+		drawLimb(userId, Skeleton.HEAD.get(), Skeleton.NECK.get());
 
 		Skeleton.setDefaultLeft();
 		drawLimb(userId, Skeleton.NECK.get(), Skeleton.SHOULDER.get());
@@ -592,8 +432,37 @@ public class Main extends PApplet{
 
 	// -----------------------------------------------------------------
 	// SimpleOpenNI events
-
+	
+	public void mousePressed(){
+		if (selectorActive){
+			skelSel.mousePressed();
+			return;
+		}
+	}
+	public void mouseClicked(){
+		if (selectorActive){
+			if(!skelSel.mouseClicked()){
+				deactivateSelector();
+			}
+			return;
+		}
+	}
+	public void mouseReleased(){
+		if (selectorActive){
+			skelSel.mouseReleased();
+			return;
+		}
+	}
 	public void keyPressed(){
+		if (key == 8){ //backspace
+			gesture.clear();
+		}
+		if (key == 'g'){
+			ghost = !ghost;
+		}
+		if (key == 'k'){
+			kitchenActive = !kitchenActive;
+		}
 		if (key == 'u'){
 			unitMode = !unitMode;
 		}
@@ -653,8 +522,8 @@ public class Main extends PApplet{
 			FileInputStream fos;
 			try {
 				fos = new FileInputStream("gesture.tmp");
-				ObjectInputStream oos = new ObjectInputStream(fos);
-				gesture = (Vector<GestureController>) oos.readObject();
+				ObjectInputStream oin = new ObjectInputStream(fos);
+				gesture = (Vector<GestureController>) oin.readObject();
 				System.out.println("Gestures Loaded: "+gesture.size());
 				System.out.println(gesture);
 			} catch (Exception e) {
