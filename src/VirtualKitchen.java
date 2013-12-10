@@ -22,6 +22,7 @@ public class VirtualKitchen {
 	int chopcounter = 0;
 	int knifepause = 0;
 	boolean knifeoncounter = false;
+	int chopcountermax = 3;
 	
 	PApplet screen;
 	Sidebar sidebar;
@@ -269,7 +270,7 @@ public class VirtualKitchen {
 	      {
 	        chopcounter++;
 	        knifeoncounter = true;
-	        if (chopcounter >= 5)
+	        if (chopcounter >= chopcountermax)
 	        {
 	          holdKnife = false;
 	          somethingInHand = false;
